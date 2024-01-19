@@ -31,7 +31,14 @@
 #define ARD_PROTOCOLO	0x2
 #define ARD_PROTOCOLO2	0x4
 #define myADDR 			ARD_PROTOCOLO
- 
+
+#define AUTORIZAR 1
+#define PRECIOS   2
+#define VENTA     3
+#define ESTADO_M  4
+#define TOTALES   5
+#define CONFIG    6
+
 /* ******************************************************************************************
  *                                     VARIABLES DE PROGRAMA                                *
  ********************************************************************************************/
@@ -45,7 +52,12 @@ OneWire   ds1(2);			// Pin para iButton1
 OneWire   ds2(3);			// Pin para iButton2
 
 // Variables para comunicacion I2C.
-byte  trazaI2C = 0;		// Comando.
+typedef struct
+{
+	byte funcion;
+	long time;
+} I2cFuncion;
+I2cFuncion	i2cFuncion;
 
 char  ardI2C[5];		// Chip que envia informacion.
 char  strI2C[190];		// Datos. cada vez que van llegando datos se van guardando. debe ser GLOBAL.
@@ -56,11 +68,6 @@ byte  PPUI2C = 0;
 char  DatosI2C[20];
 
 byte  SolicitudVol=0;
-
-// VARIABLES de Autorizacion por iButton.
-byte	Autorizacion;
-//char	C1_Placa[8];
-//char	C2_Placa[8];
 
 unsigned long iB_Tini;
 
@@ -135,7 +142,7 @@ void print_infoVenta( byte pos )
  *****************************************************************************************************/
 void setup()
 {
-  Serial.begin (115200);   // debugging
+	Serial.begin (115200);   // debugging
 	Serial.println( F("***************************") );
 	Serial.println( F("*     REINICIA CHIP       *") );
 	Serial.println( F("***************************") );
@@ -153,8 +160,9 @@ void setup()
 	digitalWrite(RXE485,0);
 	
 	Serial.println( F("Config WIRE I2C") );
-	Wire.begin(ARD_PROTOCOLO);					// Se inicializa la comunicacion I2C para leer memoria EEPROM1024.
+	Wire.begin(ARD_PROTOCOLO);
 	Wire.onReceive(RecibeRequisicionI2C);
+	Wire.onRequest(requestEvent);
 	
 	pinMode(7,OUTPUT);
 	digitalWrite(7,1);
@@ -173,7 +181,7 @@ void setup()
 
 	for( int i=0; i<4; i++ )
 	{
-    unsigned char trama[25];
+	    unsigned char trama[25];
 		int manguera=0;
 		int res;
   
@@ -203,7 +211,7 @@ void setup()
 		if(res >= 3)   manguera = VerificaRecibido( trama, res);
 		delayx(DELAYWAYNE);
 	}
-  print_infoVenta(0);
+	print_infoVenta(0);
 	print_infoVenta(1);
 	print_infoVenta(2);
 	print_infoVenta(3);
@@ -225,39 +233,25 @@ void setup()
 		Mantener contacto revizando los iButton para la comunicacion	*/
 void loop()
 {
-  byte   Venta_En;
-	Venta_En = digitalRead(8);  Serial.print(Venta_En);   Serial.print(F(" - "));
-	Venta_En = digitalRead(9);  Serial.print(Venta_En);
 	Serial.print( F(" ____________________________________________________"));
 	Serial.print( F(" - "));    Serial.print(millis());  Serial.print( F(" - ContLoop: "));    Serial.println(ContLoop);
 
-/*  if(ContLoop==10)
-  {
-    setPrecio( byte ID, byte manguera, 7210 );
-  } // */
-
-  
 	LoopI2C_Comunicacion();			// Si no llega traza, su uso de tiempo es minimo.
 	LoopProtocolo_wayne();
 	
 	// ------ Verificar si hay se debe desautorizar mangueras ------
-	if(( millis()- iB_Tini > ESPERAIBUTTON )&&(Autorizacion!=0))		// 1 o 2.
+	if(( millis()- iB_Tini > ESPERAIBUTTON ))		// 1 o 2.
 	{
-    Serial.print( F("millis: ") );    Serial.println( millis() );
+	    Serial.print( F("millis: ") );    Serial.println( millis() );
 		Serial.print( F("iB_Tini: ") );    Serial.println( iB_Tini );
 		
 		Serial.println( F("Deshabilitar mangueras ***") );
 		
-//		C1_Placa[0] = 0;		C2_Placa[0] = 0;
-		Autorizacion = 0;
-		//iB_Tini = 0;
 		//Si se levanta manguera se debe detener este procedimiento!!!   @@@ Cuando se activa manguera autorizacion se pone en 0
 		
-  }	// */
+	}	// */
 	// -------------------------------------------------------------
-	
 	ContLoop++;
-	
 }       // FIN LOOP
 
 /* ***************************************************************************************************
@@ -331,27 +325,35 @@ void RecibeRequisicionI2C( int howMany )	// Se mantiene sin informacion la inter
 	strncpy( DatosI2C, ptr, 19 );		//Serial.print( F("I2C. datos: ") );		Serial.println( DatosI2C );
 	
 	// Verificar que el primero si sea "innpetrol"
-	trazaI2C = 0;
 
 	Serial.print( F("I2C. Comando: ") );   Serial.print(REQcomand);
   
+	if( strcmp_P( REQcomand, (PGM_P)F("ventas") )==0 )
+	{
+		i2cFuncion.funcion = 1;
+		i2cFuncion.time = millis() + 1000;
+	}
+
 	if( strcmp_P( REQcomand, (PGM_P)F("numeracion") )==0 )				// Solicitud de enviar valor de ibutton. para buscar en la base de datos.
 	{
+		i2cFuncion.funcion = 2;
+		i2cFuncion.time = millis() + 1000;
+
 		Serial.println(F("Llega solicitud de numeracion"));
 		SolicitudVol=1;
-		trazaI2C = 2;
 	}
 	
 	if( strcmp_P( REQcomand, (PGM_P)F("estado") )==0 )					// Solicitud de releer.
 	{
-		trazaI2C = 5;
+		i2cFuncion.funcion = 3;
+		i2cFuncion.time = millis() + 1000;
 	}
 	
 	if( strcmp( REQcomand, "newprecio" )==0 )       // Solicitud de enviar valor de Estado del turno.
 	{
 		Serial.println(F("ORDEN CAMBIAR PRECIOS..."));
-    
-	//Cargar estructura con datos del precio.
+
+		//Cargar estructura con datos del precio.
 		I2CPrecio i2cPrecio;
 		int size = sizeof(i2cPrecio);
 		char  *tmpstr = (char*)(&i2cPrecio);
@@ -362,28 +364,30 @@ void RecibeRequisicionI2C( int howMany )	// Se mantiene sin informacion la inter
 			tmpstr[i] = chari2c;
 			Serial.print(0xff&chari2c, HEX); Serial.print(F(" "));
 		} Serial.println();
-    
-    // poner en cola de ejecucion.
+
+	    // poner en cola de ejecucion.
 		PPUArray[i2cPrecio.manguera] = i2cPrecio.PPU;
 		Serial.print(F("Manguera: "));                Serial.println(i2cPrecio.manguera);
 		Serial.print(F("PPU     : "));                Serial.println(i2cPrecio.PPU);
-    
-    // variable aparte para tema de precios.
+
+	    // variable aparte para tema de precios.
 		PPUI2C = 7;
-		trazaI2C = 7;
 	} // */
 	
-  // ____________________________________________________________________________________________________
+	// ____________________________________________________________________________________________________
 	if( strcmp( REQcomand, "aut" )==0 )       // Solicitud de enviar valor de Estado del turno.
 	{
 		Serial.println(F("ORDEN VALORES DE AUTORIZACION..."));
+
+		i2cFuncion.funcion = ;
+		i2cFuncion.time = millis() + 30000;		// La vigencia de la autorizacion no es mas de 30 segundos.
     
 		int size = sizeof(i2cAutoriza);
 		char  *tmpstr = (char*)(&i2cAutoriza);
     
 		for(int i=0; i<size; i++)
 		{
-      char chari2c = (char2int( DatosI2C[2*i] )<<4) | char2int( DatosI2C[2*i+1] );
+			char chari2c = (char2int( DatosI2C[2*i] )<<4) | char2int( DatosI2C[2*i+1] );
 			tmpstr[i] = chari2c;
 			Serial.print(0xff&chari2c, HEX); Serial.print(F(" "));
 		} Serial.println();
@@ -391,25 +395,13 @@ void RecibeRequisicionI2C( int howMany )	// Se mantiene sin informacion la inter
 		if(i2cAutoriza.modo == 2)
 		i2cAutoriza.cantidad = i2cAutoriza.cantidad*1000;
 
-    // poner en cola de ejecucion.
-    Serial.print(F("modo    : "));  Serial.println(i2cAutoriza.modo);
-    Serial.print(F("lado    : "));  Serial.println(i2cAutoriza.lado);
-    Serial.print(F("mang    : "));  Serial.println(i2cAutoriza.mang);
-    Serial.print(F("cantidad: "));  Serial.println(i2cAutoriza.cantidad);
-    
-//    	  PPUI2C = 8;
-//    	  trazaI2C = 8;
+		// poner en cola de ejecucion.
+		Serial.print(F("modo    : "));  Serial.println(i2cAutoriza.modo);
+		Serial.print(F("lado    : "));  Serial.println(i2cAutoriza.lado);
+		Serial.print(F("mang    : "));  Serial.println(i2cAutoriza.mang);
+		Serial.print(F("cantidad: "));  Serial.println(i2cAutoriza.cantidad);
 	} // */
 	
-	if( strcmp_P( REQcomand, (PGM_P)F("S2V") )==0 )
-	{
-	}
-  
-	if( strcmp_P( REQcomand, (PGM_P)F("S2T") )==0 )
-	{
-		return;
-	}
-  
 	//--------------------------------------------------
 	if(trazaI2C==0)						// Se recibe una traza que no identifica un comando.
 	{

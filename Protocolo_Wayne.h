@@ -619,12 +619,10 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				delay(100);
 				
 				Serial.println(F("INICIA VENTA *******"));
-				Serial.print(F("Autorizacion: "));  Serial.println(Autorizacion);
 				Serial.print(F("ID: "));  Serial.println(ID, HEX);
 				
 				//			AUTORIZACION
 				autorizar(ID, pre_mang, 0, 0, precioBDC);
-				Autorizacion = 0;
 				
 				mang_status[pos]=1;
 				F_ventaOk[pos] = 0;
@@ -800,21 +798,7 @@ int		autorizar(byte ID, byte manguera, byte modo, long cantidad, byte *precioBDC
 	Serial.print(F("modo    : "));  Serial.println(modo);
 	Serial.print(F("mang    : "));  Serial.println(manguera);
 	
-	byte  Venta_En = 0;           // Si Venta_En = 1, activa manguera.
-	
-	if(ID == IDs[0]) Venta_En = digitalRead(8);
-	if(ID == IDs[1]) Venta_En = digitalRead(9);
-	if(ID == IDs[2]) Venta_En = digitalRead(8);
-	if(ID == IDs[3]) Venta_En = digitalRead(9);
-	
-	Serial.print(F("Venta_En: "));  Serial.println(Venta_En);
-	
-	if(Venta_En!=1)               // AUTORIZACION POR ARDUINO MEGA.
-	{
-		return 0;
-	} // */
-
-  // probar si la manguera es la misma, sino, retorna.
+	// probar si la manguera es la misma, sino, retorna.
 	Serial.println(F("--- i2cAutoriza ---"));
 	Serial.print(F("modo    : "));  Serial.println(i2cAutoriza.modo);
 	Serial.print(F("lado    : "));  Serial.println(i2cAutoriza.lado);

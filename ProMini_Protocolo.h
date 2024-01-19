@@ -1,6 +1,3 @@
-#define Num_surtidores 1   //Si se monta solo un promini se pone 1
-                           //si se montan ambos, poner 2. 
-
 void RecibeRequisicionI2C( int howMany );
 
 void  delayx(long tiempo)
@@ -87,409 +84,109 @@ void LoopProtocolo_wayne()		// Codigo para comunicacion con surtidor Marca WAYNE
 	print_infoVenta(5);		// las 6 mangueras.
 	delayx(50);
 // */	
-	if((0x03&ContLoop)==0)	// Envia.
-	{
-		int estadoPin;
-		int i=0;
-    
-		strcpy( strI2C, F("innpe:1:venta:") );		// No importa que cara si es A, B o C.
-		
-		// -------------------------
-		// ENVIAR DATOS AL ARDUINO PRINCIPAL.
-		tmpstr1 = (char*)(&venta);
-		for(int i=0; i<sizeof(venta); i++)
-		{
-			chari2c = tmpstr1[i];
-			
-			if( chari2c<16 )  sprintf( strI2C, "%s0%x", strI2C, chari2c );
-			else        sprintf( strI2C,  "%s%x", strI2C, chari2c );
-		}
-		Serial.println(strI2C);		// estructura que contiene la informacion a enviar. 182 bytes (2020-02-02).
-		
-		int    intTemp;
-		i=0;
-		intTemp = strlen(strI2C);
-		while( 32*i< intTemp )
-		{
-			char  bufI2C[55];
-			bzero(bufI2C, sizeof(bufI2C));
-      
-			strncpy(bufI2C, &strI2C[i*32], 32);
-			Serial.println(bufI2C);
-			
-			Wire.beginTransmission(ARD_MEGA2560);
-			Wire.write(bufI2C);
-			Wire.endTransmission();
-			
-			delayx(15);
-			i++;
-		}
-		
-		Wire.beginTransmission(ARD_MEGA2560);
-		Wire.write("END");
-		Wire.endTransmission();
-		
-		delayx(100); // */
-		
-		// --------------------------------------------------
-		// --------------------------------------------------
-		// --------------------------------------------------
-		if(Num_surtidores == 2)
-		{
-			delayx(100);
-			NumeracionS2   totalS2;
-			VentaS2   		ventaS2;
-			int varI = 0;
-			char  cI2C;
-			char  strTemp[20];
-			
-			char *tmpstr = (char*)(&ventaS2);
-			
-			// Solicitud				SI ENTRA AQUI, SIEMPRE SOY EL 1.
-			strcpy_P( strTemp, (PGM_P)F("innpe:1:venta1:0"));   Serial.println(strTemp);
-			Wire.beginTransmission(ARD_PROTOCOLO2);
-			Wire.write(strTemp);
-			Wire.endTransmission();
-			delayx(5);
-			
-//			estadoPin= digitalRead(A4);   Serial.print(F("SDA: "));   Serial.println(estadoPin);
-//			estadoPin= digitalRead(A5);   Serial.print(F("SCL: "));   Serial.println(estadoPin);
-			
-			// Requisicion y recepcion
-			Wire.requestFrom(ARD_PROTOCOLO2, 2*sizeof(ventaS2));    // request 6 bytes from slave device #8
-			varI = 0;
-			while(Wire.available() > 0)
-			{
-				cI2C = Wire.read();
-				
-				if(varI<199) strI2C[varI++] = cI2C;
-			}	strI2C[varI]=0;
-			Serial.print(F("strI2C: "));    Serial.println(strI2C);
-			
-			// Monta en estructura
-			tmpstr = (char*)(&ventaS2);
-			
-			for(i=0; i<sizeof(ventaS2); i++)
-			{
-				char chari2c = (char2int( strI2C[2*i] )<<4) | char2int( strI2C[2*i+1] );
-				tmpstr[i] = chari2c;
-			}
-			
-			i = 3*ventaS2.manguera;
-			venta2[0].Volumen	= ventaS2.Volumen;
-			venta2[0].Venta		= ventaS2.Venta;
-			venta2[0].PPU		= ventaS2.PPU;
-			
-			Serial.print(F("M:       "));    Serial.println(ventaS2.manguera);
-			Serial.print(F("i:       "));    Serial.println(i);
-			Serial.print(F("Volumen: "));    Serial.println(ventaS2.Volumen);
-			Serial.print(F("Venta:   "));    Serial.println(ventaS2.Venta);
-			Serial.print(F("PPU:     "));    Serial.println(ventaS2.PPU);
-			
-			// --------------------------------------------------
-			//estadoPin= digitalRead(A4);   Serial.print(F("SDA: "));   Serial.println(estadoPin);
-			//estadoPin= digitalRead(A5);   Serial.print(F("SCL: "));   Serial.println(estadoPin);
-			// Solicitud
-			strcpy_P( strTemp, (PGM_P)F("innpe:1:total1:0"));		Serial.println(strTemp);
-			Wire.beginTransmission(ARD_PROTOCOLO2);
-			Wire.write(strTemp);
-			Wire.endTransmission();
-			delayx(5);
-			
-			//estadoPin= digitalRead(A4);   Serial.print(F("SDA: "));   Serial.println(estadoPin);
-			//estadoPin= digitalRead(A5);   Serial.print(F("SCL: "));   Serial.println(estadoPin);
-			// Requisicion y recepcion
-			Wire.requestFrom(ARD_PROTOCOLO2, 2*sizeof(totalS2));    // request 6 bytes from slave device #8
-			varI = 0;
-			while (Wire.available() > 0)
-			{
-				cI2C = Wire.read();
-				
-				if(varI<199) strI2C[varI++] = cI2C;
-			}	strI2C[varI]=0;
-			Serial.print(F("strI2C: "));    Serial.println(strI2C);
-			
-			// Monta en estructura
-			tmpstr = (char*)(&totalS2);
-			for(i=0; i<sizeof(totalS2); i++)
-			{
-				char chari2c = (char2int( strI2C[2*i] )<<4) | char2int( strI2C[2*i+1] );
-				tmpstr[i] = chari2c;
-			}
-			
-			i = 3*totalS2.manguera;   // 0 => 2 - 1 => 5
-			venta2[0].Numeracion   = totalS2.Numeracion;		// mierda puta reputa
-			
-			Serial.print(F("M  : "));    Serial.println(totalS2.manguera);
-			Serial.print(F("i  : "));    Serial.println(i);
-			Serial.print(F("Num: "));    Serial.println(totalS2.Numeracion);
-			
-			// --------------------------------------------------
-			//estadoPin= digitalRead(A4);   Serial.print(F("SDA: "));   Serial.println(estadoPin);
-			//estadoPin= digitalRead(A5);   Serial.print(F("SCL: "));   Serial.println(estadoPin);
-			
-			// Solicitud
-			strcpy_P( strTemp, (PGM_P)F("innpe:1:venta2:0"));		Serial.println(strTemp);
-			Wire.beginTransmission(ARD_PROTOCOLO2);
-			Wire.write(strTemp);
-			Wire.endTransmission();
-			delayx(5);
-			
-			//estadoPin= digitalRead(A4);   Serial.print(F("SDA: "));   Serial.println(estadoPin);
-			//estadoPin= digitalRead(A5);   Serial.print(F("SCL: "));   Serial.println(estadoPin);
-			// Requisicion y recepcion
-			Wire.requestFrom(ARD_PROTOCOLO2, 2*sizeof(ventaS2));    // request 6 bytes from slave device #8
-			varI = 0;
-			while (Wire.available() > 0)
-			{
-				cI2C = Wire.read();
-				
-				if(varI<199) strI2C[varI++] = cI2C;
-			}	strI2C[varI]=0;
-			Serial.print(F("strI2C: "));    Serial.println(strI2C);
-			
-			// Monta en estructura
-			tmpstr = (char*)(&ventaS2);
-			for(i=0; i<sizeof(ventaS2); i++)
-			{
-				char chari2c = (char2int( strI2C[2*i] )<<4) | char2int( strI2C[2*i+1] );
-				tmpstr[i] = chari2c;
-			}
-			
-			i = 3*ventaS2.manguera;   // 0 => 2 - 1 => 5
-			venta2[3].Volumen  = ventaS2.Volumen;
-			venta2[3].Venta    = ventaS2.Venta;
-			venta2[3].PPU    = ventaS2.PPU;
-			
-			Serial.print(F("M: "));    Serial.println(ventaS2.manguera);
-			Serial.print(F("i: "));    Serial.println(i);
-			Serial.print(F("Volumen: "));    Serial.println(ventaS2.Volumen);
-			Serial.print(F("Venta  : "));    Serial.println(ventaS2.Venta);
-			Serial.print(F("PPU    : "));    Serial.println(ventaS2.PPU);
-			
-			// --------------------------------------------------
-			//estadoPin= digitalRead(A4);   Serial.print(F("SDA: "));   Serial.println(estadoPin);
-			//estadoPin= digitalRead(A5);   Serial.print(F("SCL: "));   Serial.println(estadoPin);
-			// Solicitud
-			strcpy_P( strTemp, (PGM_P)F("innpe:1:total2:0"));		Serial.println(strTemp);
-			Wire.beginTransmission(ARD_PROTOCOLO2);
-			Wire.write(strTemp);
-			Wire.endTransmission();
-			delayx(5);
-			
-			//estadoPin= digitalRead(A4);   Serial.print(F("SDA: "));   Serial.println(estadoPin);
-			//estadoPin= digitalRead(A5);   Serial.print(F("SCL: "));   Serial.println(estadoPin);
-			// Requisicion y recepcion
-			Wire.requestFrom(ARD_PROTOCOLO2, 2*sizeof(totalS2));    // request 6 bytes from slave device #8
-			varI = 0;
-			while (Wire.available() > 0)
-			{
-				cI2C = Wire.read();
-			
-				if(varI<199) strI2C[varI++] = cI2C;
-			}	strI2C[varI]=0;
-			Serial.print(F("strI2C: "));    Serial.println(strI2C);
-			
-			// Monta en estructura
-			tmpstr = (char*)(&totalS2);
-			for(i=0; i<sizeof(totalS2); i++)
-			{
-				char chari2c = (char2int( strI2C[2*i] )<<4) | char2int( strI2C[2*i+1] );
-				tmpstr[i] = chari2c;
-			}
-			
-			i = 3*totalS2.manguera + 2;   // 0 => 2 - 1 => 5      @@@@@ mierda????
-			venta2[3].Numeracion   = totalS2.Numeracion;
-			
-			Serial.print(F("M  : "));    Serial.println(totalS2.manguera);
-			Serial.print(F("i  : "));    Serial.println(i);
-			Serial.print(F("Num: "));    Serial.println(totalS2.Numeracion);
-			
-			strcpy( strI2C, F("innpe:2:venta:") );		// Siempre va a llegar como SURTIDOR 1
-			// -------------------------
-			// ENVIAR DATOS AL ARDUINO PRINCIPAL.
-			tmpstr1 = (char*)(&venta2);
-			for(int i=0; i<sizeof(venta2); i++)
-			{
-				chari2c = tmpstr1[i];
-				
-				if( chari2c<16 )  sprintf( strI2C, "%s0%x", strI2C, chari2c );
-				else        sprintf( strI2C,  "%s%x", strI2C, chari2c );
-			}
-			Serial.println(strI2C);		// estructura que contiene la informacion a enviar.
-			
-			int    intTemp;
-			int i=0;
-			intTemp = strlen(strI2C);
-			while( 32*i< intTemp )
-			{
-				char  bufI2C[55];
-				bzero(bufI2C, sizeof(bufI2C));
-				
-				strncpy(bufI2C, &strI2C[i*32], 32);
-				Serial.println(bufI2C);
-				
-				Wire.beginTransmission(ARD_MEGA2560);
-				Wire.write(bufI2C);
-				Wire.endTransmission();
-				
-				delayx(15);
-				i++;
-			}
-			
-			Wire.beginTransmission(ARD_MEGA2560);
-			Wire.write("END");
-			Wire.endTransmission();
-			
-			delayx(10);   // */
-		}
-	}
-
 }
 
 // ----------------------------------------------------------------------------------------------------
 void Verificar_iButton(int cara)
 {
-  if( trazaI2C == 0 )             // 
-  {
-    byte      addr[8];      // Almacena la informacion que se lee desde el ibutton.
-    char  Cod_iButton[20];
-    
-    //Serial.print( F("trazaI2C: ") );  Serial.println(trazaI2C);
-    //---------------------------------------------------------------
-    byte  No_ds = 0;
-    
-    if( (cara==0)||(cara==2) )  getKeyCode(ds1, addr);
-    if( (cara==1)||(cara==3) )  getKeyCode(ds2, addr);
-    
-    if(keyStatus==F("ok"))       // Se recibio dato desde iButton.
-    {
-      // PASAR DE HEXAGESIMAL A ASCII.
-		Cod_iButton[0] = 0;
-		for(int i = 8; i >0; i--)   // ED:00:00:15:BE:65:93:01    MOSTRAR IBUTTON.
+	if( trazaI2C == 0 )             // 
+	{
+		byte      addr[8];      // Almacena la informacion que se lee desde el ibutton.
+		char  Cod_iButton[20];
+		
+		//Serial.print( F("trazaI2C: ") );  Serial.println(trazaI2C);
+		//---------------------------------------------------------------
+		byte  No_ds = 0;
+		
+		if( (cara==0)||(cara==2) )  getKeyCode(ds1, addr);
+		if( (cara==1)||(cara==3) )  getKeyCode(ds2, addr);
+		
+		if(keyStatus==F("ok"))       // Se recibio dato desde iButton.
 		{
-			Serial.print( F(":"));    Serial.print(addr[i-1], HEX);
-        
-			if( addr[i-1]<16 )  sprintf( Cod_iButton, "%s0%x", Cod_iButton, addr[i-1] );
-			else        sprintf( Cod_iButton,  "%s%x", Cod_iButton, addr[i-1] );
-		}
-		Serial.print( F("Enviar: ") );    Serial.println(Cod_iButton);              // -----------------------------------------
-      
-		// ------------------------------------
-		char  strIbutton1[20];
-		strcpy(strIbutton1, F("innpe:1:iButton:"));
-      
-		Wire.beginTransmission(ARD_MEGA2560);
-		if( (cara==0)||(cara==2) )  Wire.write( strIbutton1 );    // 18
-		if( (cara==1)||(cara==3) )  Wire.write( strIbutton1 );    // 18
-		Wire.endTransmission();
-      
-		if( (cara==0)||(cara==2) )  Serial.print( F("innpe:1:iButton:") );    // 18
-		if( (cara==1)||(cara==3) )  Serial.print( F("innpe:1:iButton:") );    // 18
-      
-      // ------------------------------------
-		Ibutton ibutton;
-		strcpy(ibutton.id, Cod_iButton);
-		ibutton.lado = cara+1;
-      
-		int sumatoria=0;
-		for(int i=0; i<18; i++) sumatoria = sumatoria+ 0xff&((int)ibutton.id);
-		sumatoria = sumatoria+ (int)ibutton.lado;
-		ibutton.Check = sumatoria;
-
-		Serial.print(ibutton.Check);
-		Serial.print(" - ");
-		Serial.println(sumatoria);
-      
-		int i;
-		strI2C[0]=0;
-		tmpstr1 = (char*)(&ibutton);
-		for(i=0; i<sizeof(ibutton); i++)
-		{
-			chari2c = tmpstr1[i];
-        
-			if( chari2c<16 )  sprintf( strI2C, "%s0%x", strI2C, chari2c );
-			else        sprintf( strI2C,  "%s%x", strI2C, chari2c );
-		}
-		Serial.println(strI2C);   // estructura que contiene la informacion a enviar.
-      
-		i=0;
-		int    intTemp;
-		intTemp = strlen(strI2C);
-		while( 32*i< intTemp )
-		{
-			char  bufI2C[55];
-			bzero(bufI2C, sizeof(bufI2C));
-        
-			strncpy(bufI2C, &strI2C[i*32], 32);
-			Serial.println(bufI2C);
-        
+		// PASAR DE HEXAGESIMAL A ASCII.
+			Cod_iButton[0] = 0;
+			for(int i = 8; i >0; i--)   // ED:00:00:15:BE:65:93:01    MOSTRAR IBUTTON.
+			{
+				Serial.print( F(":"));    Serial.print(addr[i-1], HEX);
+			
+				if( addr[i-1]<16 )  sprintf( Cod_iButton, "%s0%x", Cod_iButton, addr[i-1] );
+				else        sprintf( Cod_iButton,  "%s%x", Cod_iButton, addr[i-1] );
+			}
+			Serial.print( F("Enviar: ") );    Serial.println(Cod_iButton);              // -----------------------------------------
+		
+			// ------------------------------------
+			char  strIbutton1[20];
+			strcpy(strIbutton1, F("innpe:1:iButton:"));
+		
 			Wire.beginTransmission(ARD_MEGA2560);
-			Wire.write(bufI2C);
+			if( (cara==0)||(cara==2) )  Wire.write( strIbutton1 );    // 18
+			if( (cara==1)||(cara==3) )  Wire.write( strIbutton1 );    // 18
 			Wire.endTransmission();
-        
-			delay(7);
-        
-			i++;
+		
+			if( (cara==0)||(cara==2) )  Serial.print( F("innpe:1:iButton:") );    // 18
+			if( (cara==1)||(cara==3) )  Serial.print( F("innpe:1:iButton:") );    // 18
+		
+		// ------------------------------------
+			Ibutton ibutton;
+			strcpy(ibutton.id, Cod_iButton);
+			ibutton.lado = cara+1;
+		
+			int sumatoria=0;
+			for(int i=0; i<18; i++) sumatoria = sumatoria+ 0xff&((int)ibutton.id);
+			sumatoria = sumatoria+ (int)ibutton.lado;
+			ibutton.Check = sumatoria;
+
+			Serial.print(ibutton.Check);
+			Serial.print(" - ");
+			Serial.println(sumatoria);
+		
+			int i;
+			strI2C[0]=0;
+			tmpstr1 = (char*)(&ibutton);
+			for(i=0; i<sizeof(ibutton); i++)
+			{
+				chari2c = tmpstr1[i];
+			
+				if( chari2c<16 )  sprintf( strI2C, "%s0%x", strI2C, chari2c );
+				else        sprintf( strI2C,  "%s%x", strI2C, chari2c );
+			}
+			Serial.println(strI2C);   // estructura que contiene la informacion a enviar.
+		
+			i=0;
+			int    intTemp;
+			intTemp = strlen(strI2C);
+			while( 32*i< intTemp )
+			{
+				char  bufI2C[55];
+				bzero(bufI2C, sizeof(bufI2C));
+			
+				strncpy(bufI2C, &strI2C[i*32], 32);
+				Serial.println(bufI2C);
+			
+				Wire.beginTransmission(ARD_MEGA2560);
+				Wire.write(bufI2C);
+				Wire.endTransmission();
+			
+				delay(7);
+			
+				i++;
+			}
+			
+			// ------------------------------------
+			Wire.beginTransmission(ARD_MEGA2560);
+			Wire.write("END");            // 3
+			Wire.endTransmission();
+			Serial.println( F("END") );
+		
 		}
-      
-      // ------------------------------------
-		Wire.beginTransmission(ARD_MEGA2560);
-		Wire.write("END");            // 3
-		Wire.endTransmission();
-		Serial.println( F("END") );
-      
-    }
-  }
-//  Serial.print( F("iButton: ") );   Serial.println(millis());
+	}
+	//Serial.print( F("iButton: ") );   Serial.println(millis());
 
 }
 
 // ----------------------------------------------------------------------------------------------------
 void LoopI2C_Comunicacion()
 {
-	//--------------------------------------------------------------- */
-	//							AUTORIZAR							  */
-	//--------------------------------------------------------------- */
-	if( trazaI2C == 3 )		// recibir Autorizar.
-	{
-		Serial.print( F("Recibido de principal: ") );		Serial.println( trazaI2C );
-		
-		if(Autorizacion == 1)
-		{
-/*			if( strcmp(DatosI2C, "0")==0 )	C1_Placa[0]=0;
-			else							strcpy( C1_Placa, DatosI2C);				// Placa Cara 1.
-			
-			mang_status[0] = 0;
-			Serial.print( F("AUTORIZAR MANGUERAS **A** ") );   Serial.println( C1_Placa );  */
-		}
-		
-		if(Autorizacion == 2)
-		{
-/*			if( strcmp(DatosI2C, "0")==0 )	C2_Placa[0]=0;
-			else							strcpy( C2_Placa, DatosI2C);				// Placa Cara 2.
-			
-			mang_status[1] = 0;
-			Serial.print( F("AUTORIZAR MANGUERAS **B** ") );   Serial.println( C2_Placa );  */
-		}
-		
-//		*****
-		iB_Tini = millis();
-		Serial.print( F("millis 2: ") );    Serial.println( millis() );
-		Serial.print( F("iB_Tini 2: ") );    Serial.println( iB_Tini );
-		trazaI2C = 0;
-	}	// FIN AUTORIZAR.	*/
-	
-	//--------------------------------------------------------------- */
-	//							ENVIAR VENTA						  */
-	//--------------------------------------------------------------- */
-	if( trazaI2C == 1 )   // Solicitud de enviar venta. PRINCIPAL: MEGA2560
-	{
-		// Codigo en caso de requerir una venta.
-		
-		trazaI2C = 0;
-	} // FIN ENVIAR VENTA.
-	
 	//--------------------------------------------------------------- */
 	//							VOLUMENES							  */
 	//--------------------------------------------------------------- */
@@ -660,29 +357,137 @@ void LoopI2C_Comunicacion()
 	{
 		Serial.println(F("CAMBIANDO PRECIOS..."));
 		for(int i=0; i<6; i++)
-    {
-		if(PPUArray[i]!=0)
 		{
-			Serial.print(F("i  : "));        Serial.println(i);
-			Serial.print(F("PPU:"));         Serial.println(PPUArray[i]);
-			if(i==0) setPrecio(IDs[0], 1, PPUArray[i]);
-			if(i==1) setPrecio(IDs[0], 2, PPUArray[i]);
-			if(i==2) setPrecio(IDs[2], 1, PPUArray[i]);
-       
-			if(i==3) setPrecio(IDs[1], 1, PPUArray[i]);
-			if(i==4) setPrecio(IDs[1], 2, PPUArray[i]);
-			if(i==5) setPrecio(IDs[3], 1, PPUArray[i]);
-        
-			PPUArray[i]=0;
+			if(PPUArray[i]!=0)
+			{
+				Serial.print(F("i  : "));        Serial.println(i);
+				Serial.print(F("PPU:"));         Serial.println(PPUArray[i]);
+				if(i==0) setPrecio(IDs[0], 1, PPUArray[i]);
+				if(i==1) setPrecio(IDs[0], 2, PPUArray[i]);
+				if(i==2) setPrecio(IDs[2], 1, PPUArray[i]);
+		
+				if(i==3) setPrecio(IDs[1], 1, PPUArray[i]);
+				if(i==4) setPrecio(IDs[1], 2, PPUArray[i]);
+				if(i==5) setPrecio(IDs[3], 1, PPUArray[i]);
+			
+				PPUArray[i]=0;
+			}
 		}
-    }
-    
-    PPUI2C = 0;
-    trazaI2C = 0;
-  } // 
+		
+		PPUI2C = 0;
+		trazaI2C = 0;
+	} // 
 	
 }
 
+void requestEvent()			// QUE PASA SI FUERAN 2 O 3 MANGUERAS??????? @@@@@@
+{
+/*	if(millis()<5000) return;
+	
+	Serial.println(F("REQUESTEVENT"));
+	int i=0;
+
+	if(trazaI2C == 0 ) return;
+	if(trazaI2C == 1 ) i=0;		// solicitud en la cara 1.	VENTA
+	if(trazaI2C == 2 ) i=0;		//							NUMERACION
+	if(trazaI2C == 3 ) i=1;		// solicitud en la cara 2.	VENTA
+	if(trazaI2C == 4 ) i=1;		//							NUMERACION
+	Serial.print(F("trazaI2C: "));  Serial.println(trazaI2C);
+	Serial.print(F("i: "));  Serial.println(i);
+	
+	if((trazaI2C == 1 )||(trazaI2C == 3 ))
+	{
+		int index = 3*i;
+		VentaS2 ventaS2;								// Se declara variable.
+		
+		ventaS2.manguera  = 	i;							// 1
+		ventaS2.Volumen   = 	venta[index].Volumen;		// 4
+		ventaS2.Venta   = 		venta[index].Venta;			// 4
+		ventaS2.PPU     = 		venta[index].PPU;				// 2
+		
+		strcpy( strI2C, "" );
+		tmpstr1 = (char*)(&ventaS2);
+		for(int j=0; j<sizeof(ventaS2); j++)
+		{
+			chari2c = tmpstr1[j];
+			
+			if( chari2c<16 )  sprintf( strI2C, "%s0%x", strI2C, chari2c );
+			else        sprintf( strI2C,  "%s%x", strI2C, chari2c );
+		}
+		Serial.println(strI2C);   // estructura que contiene la informacion a enviar.
+		Serial.print(F("millis: "));    Serial.println(millis());
+		
+		Wire.write(strI2C);
+	}
+	
+	if((trazaI2C == 2 )||(trazaI2C == 4 ))
+	{
+		int index = 2*i;
+		TotalS2 totalS2;
+		
+		totalS2.manguera	= i;							// 1
+		totalS2.Numeracion	= venta[index].Numeracion;		// 4
+		
+		strcpy( strI2C, "" );
+		tmpstr1 = (char*)(&totalS2);
+		for(int j=0; j<sizeof(totalS2); j++)
+		{
+			chari2c = tmpstr1[j];
+			
+			if( chari2c<16 )  sprintf( strI2C, "%s0%x", strI2C, chari2c );
+			else        sprintf( strI2C,  "%s%x", strI2C, chari2c );
+		}
+		Serial.println(strI2C);   // estructura que contiene la informacion a enviar.
+		Serial.print(F("millis: "));    Serial.println(millis());
+		
+		Wire.write(strI2C);
+	}
+	trazaI2C =0; */
+}
+
+
+/*		int estadoPin;
+		int i=0;
+    
+		strcpy( strI2C, F("innpe:1:venta:") );		// No importa que cara si es A, B o C.
+		
+		// -------------------------
+		// ENVIAR DATOS AL ARDUINO PRINCIPAL.
+		tmpstr1 = (char*)(&venta);
+		for(int i=0; i<sizeof(venta); i++)
+		{
+			chari2c = tmpstr1[i];
+			
+			if( chari2c<16 )  sprintf( strI2C, "%s0%x", strI2C, chari2c );
+			else        sprintf( strI2C,  "%s%x", strI2C, chari2c );
+		}
+		Serial.println(strI2C);		// estructura que contiene la informacion a enviar. 182 bytes (2020-02-02).
+		
+		int    intTemp;
+		i=0;
+		intTemp = strlen(strI2C);
+		while( 32*i< intTemp )
+		{
+			char  bufI2C[55];
+			bzero(bufI2C, sizeof(bufI2C));
+      
+			strncpy(bufI2C, &strI2C[i*32], 32);
+			Serial.println(bufI2C);
+			
+			Wire.beginTransmission(ARD_MEGA2560);
+			Wire.write(bufI2C);
+			Wire.endTransmission();
+			
+			delayx(15);
+			i++;
+		}
+		
+		Wire.beginTransmission(ARD_MEGA2560);
+		Wire.write("END");
+		Wire.endTransmission();
+		
+		delayx(100); // */
+	
 // ---------------------------------------------------------------
 char *itostr( char *varstr, byte vardato )
 {
