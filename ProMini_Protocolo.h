@@ -89,12 +89,12 @@ void LoopProtocolo_wayne()		// Codigo para comunicacion con surtidor Marca WAYNE
 // ----------------------------------------------------------------------------------------------------
 void Verificar_iButton(int cara)
 {
-	if( trazaI2C == 0 )             // 
+	if( i2cFuncion.funcion == 0 )             // 
 	{
 		byte      addr[8];      // Almacena la informacion que se lee desde el ibutton.
 		char  Cod_iButton[20];
 		
-		//Serial.print( F("trazaI2C: ") );  Serial.println(trazaI2C);
+		//Serial.print( F("i2cFuncion.funcion: ") );  Serial.println(i2cFuncion.funcion);
 		//---------------------------------------------------------------
 		byte  No_ds = 0;
 		
@@ -191,7 +191,7 @@ void LoopI2C_Comunicacion()
 	//							VOLUMENES							  */
 	//--------------------------------------------------------------- */
 	// ------------------------------------ numeracion ------------------------------------
-	if( trazaI2C == 2 )   // Solicitud de enviar venta. PRINCIPAL: MEGA2560
+	if( i2cFuncion.funcion == TOTALES )   // Solicitud de enviar venta. PRINCIPAL: MEGA2560
 	{
 		Numeracion  numeracion;
 		
@@ -290,13 +290,13 @@ void LoopI2C_Comunicacion()
 		Wire.write("END");
 		Wire.endTransmission();
 		
-		trazaI2C = 0;
+		i2cFuncion.funcion = 0;
 	} // FIN ENVIAR VENTA.
 	
 	//--------------------------------------------------------------- */
 	//						ESTADO DE MANGUERAS						  */
 	//--------------------------------------------------------------- */
-	if( trazaI2C == 5 )			// Estado mangueras. ( ladoA, ladoB, ambos ).
+	if( i2cFuncion.funcion == ESTADO_M )			// Estado mangueras. ( ladoA, ladoB, ambos ).
 	{
 		Serial.println(F("INICIA ESTADO MANGUERAS..."));
 		Serial.print(F("M0: "));		Serial.println(mang_status[0]);
@@ -345,12 +345,12 @@ void LoopI2C_Comunicacion()
 		Wire.endTransmission();
 		
 		Serial.println(F("FIN ESTADO MANGUERAS..."));
-		trazaI2C = 0;
+		i2cFuncion.funcion = 0;
 	}
 	
-	if( trazaI2C == 6 )
+	if( i2cFuncion.funcion == 6 )
 	{
-		trazaI2C = 0;
+		i2cFuncion.funcion = 0;
 	} // */
  
 	if( PPUI2C == 7 )   // Actualizar precio de mangueras.
@@ -375,7 +375,7 @@ void LoopI2C_Comunicacion()
 		}
 		
 		PPUI2C = 0;
-		trazaI2C = 0;
+		i2cFuncion.funcion = 0;
 	} // 
 	
 }
@@ -387,15 +387,15 @@ void requestEvent()			// QUE PASA SI FUERAN 2 O 3 MANGUERAS??????? @@@@@@
 	Serial.println(F("REQUESTEVENT"));
 	int i=0;
 
-	if(trazaI2C == 0 ) return;
-	if(trazaI2C == 1 ) i=0;		// solicitud en la cara 1.	VENTA
-	if(trazaI2C == 2 ) i=0;		//							NUMERACION
-	if(trazaI2C == 3 ) i=1;		// solicitud en la cara 2.	VENTA
-	if(trazaI2C == 4 ) i=1;		//							NUMERACION
-	Serial.print(F("trazaI2C: "));  Serial.println(trazaI2C);
+	if(i2cFuncion.funcion == 0 ) return;
+	if(i2cFuncion.funcion == 1 ) i=0;		// solicitud en la cara 1.	VENTA
+	if(i2cFuncion.funcion == 2 ) i=0;		//							NUMERACION
+	if(i2cFuncion.funcion == 3 ) i=1;		// solicitud en la cara 2.	VENTA
+	if(i2cFuncion.funcion == 4 ) i=1;		//							NUMERACION
+	Serial.print(F("i2cFuncion.funcion: "));  Serial.println(i2cFuncion.funcion);
 	Serial.print(F("i: "));  Serial.println(i);
 	
-	if((trazaI2C == 1 )||(trazaI2C == 3 ))
+	if((i2cFuncion.funcion == 1 )||(i2cFuncion.funcion == 3 ))
 	{
 		int index = 3*i;
 		VentaS2 ventaS2;								// Se declara variable.
@@ -420,7 +420,7 @@ void requestEvent()			// QUE PASA SI FUERAN 2 O 3 MANGUERAS??????? @@@@@@
 		Wire.write(strI2C);
 	}
 	
-	if((trazaI2C == 2 )||(trazaI2C == 4 ))
+	if((i2cFuncion.funcion == 2 )||(i2cFuncion.funcion == 4 ))
 	{
 		int index = 2*i;
 		TotalS2 totalS2;
@@ -442,7 +442,7 @@ void requestEvent()			// QUE PASA SI FUERAN 2 O 3 MANGUERAS??????? @@@@@@
 		
 		Wire.write(strI2C);
 	}
-	trazaI2C =0; */
+	i2cFuncion.funcion =0; */
 }
 
 

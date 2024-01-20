@@ -330,13 +330,13 @@ void RecibeRequisicionI2C( int howMany )	// Se mantiene sin informacion la inter
   
 	if( strcmp_P( REQcomand, (PGM_P)F("ventas") )==0 )
 	{
-		i2cFuncion.funcion = 1;
+		i2cFuncion.funcion = VENTA;
 		i2cFuncion.time = millis() + 1000;
 	}
 
 	if( strcmp_P( REQcomand, (PGM_P)F("numeracion") )==0 )				// Solicitud de enviar valor de ibutton. para buscar en la base de datos.
 	{
-		i2cFuncion.funcion = 2;
+		i2cFuncion.funcion = TOTALES;
 		i2cFuncion.time = millis() + 1000;
 
 		Serial.println(F("Llega solicitud de numeracion"));
@@ -345,13 +345,15 @@ void RecibeRequisicionI2C( int howMany )	// Se mantiene sin informacion la inter
 	
 	if( strcmp_P( REQcomand, (PGM_P)F("estado") )==0 )					// Solicitud de releer.
 	{
-		i2cFuncion.funcion = 3;
+		i2cFuncion.funcion = ESTADO_M;
 		i2cFuncion.time = millis() + 1000;
 	}
 	
 	if( strcmp( REQcomand, "newprecio" )==0 )       // Solicitud de enviar valor de Estado del turno.
 	{
 		Serial.println(F("ORDEN CAMBIAR PRECIOS..."));
+		i2cFuncion.funcion = PRECIOS;
+		i2cFuncion.time = millis() + 1000;		// La vigencia de la autorizacion no es mas de 30 segundos.
 
 		//Cargar estructura con datos del precio.
 		I2CPrecio i2cPrecio;
@@ -379,7 +381,7 @@ void RecibeRequisicionI2C( int howMany )	// Se mantiene sin informacion la inter
 	{
 		Serial.println(F("ORDEN VALORES DE AUTORIZACION..."));
 
-		i2cFuncion.funcion = ;
+		i2cFuncion.funcion = AUTORIZAR;
 		i2cFuncion.time = millis() + 30000;		// La vigencia de la autorizacion no es mas de 30 segundos.
     
 		int size = sizeof(i2cAutoriza);
@@ -403,15 +405,15 @@ void RecibeRequisicionI2C( int howMany )	// Se mantiene sin informacion la inter
 	} // */
 	
 	//--------------------------------------------------
-	if(trazaI2C==0)						// Se recibe una traza que no identifica un comando.
+	if(i2cFuncion.funcion==0)						// Se recibe una traza que no identifica un comando.
 	{
 		Serial.print( F("ERROR ***** I2C. Sale de I2C...") );
-		Serial.println( trazaI2C );
+		Serial.println( i2cFuncion.funcion );
 	}
 	else
 	{
 		Serial.print( F("ORDEN...") );
-		Serial.println( trazaI2C );
+		Serial.println( i2cFuncion.funcion );
 	}
 }	//  */
 
