@@ -1,2 +1,2 @@
-# Full-Colombia-ATMEGA2560
+# Full-Colombia-Wayne
 Communication program with fuel pumps Wayne.
