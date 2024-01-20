@@ -1,4 +1,4 @@
-# Full-Colombia-ATMEGA2560
+# Full-Colombia-Wayne
 Communication program with fuel pumps Wayne.
 
 ## Recibe los siguientes comandos desde el uC principal.
