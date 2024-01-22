@@ -1,52 +1,17 @@
-				
-				
-/*      
-				if(mang_status[pos]==1)
-				{
-					Serial.println(F("FIN VENTA ******* 1"));
-					Serial.print(F("Manguera: "));  Serial.println(pre_mang);
-					
-					finalVenta=1;
-					F_globales[pos] = 0;
-					F_ventaOk[pos]=1;
-					
-					if((0x01&ContLoop)!=0)	ContLoop++;
-				}
-				if(mang_status[pos]==3)		// leer 3 veces los valores de venta.
-				{
-					mang_status[pos]=0;
-					getVenta(ID);                   // Solicita VENTA
-					getTotales( ID, pre_mang );     // Solicita TOTALES.
-					return -1;
-				}
-				getVenta(ID);                   // Solicita VENTA
-				getTotales( ID, pre_mang );     // Solicita TOTALES.
-				mang_status[pos]++;
-				return -1; */
-
-/* 
- * Verificar cuantas mangueras por Cara se van a programar.
- * 
- */
-
-/*		51.31.1.1.0.3.4.1.54.38.11.10. - 8F09
-		crc16 RX: 8F09- crc16: trama: 88FA
-*/
-
 #define  RS485Transmit HIGH
 #define  RS485Receive LOW
 #define  TXE485 6
 #define  RXE485 5
 
-#define IDLE1	0
-#define IDLE2	5
-#define READY	2		// @@@@@
-#define WORK	4
+#define  IDLE1	0
+#define  IDLE2	5
+#define  READY	2		// @@@@@
+#define  WORK	4
 
-#define F_ESTADO	0x01
-#define F_VENTA		0x02
-#define F_TOTAL		0x04
-#define F_PRECIO	0x08
+#define  F_ESTADO	0x01
+#define  F_VENTA	0x02
+#define  F_TOTAL	0x04
+#define  F_PRECIO	0x08
 
 /* ***************************************************************************************************
  *                                            FUNCIONES                                              *
@@ -60,65 +25,20 @@ int		CerrarComunicacion(byte ID, byte consecutivo);				// oK
 int		VerificaRecibido( unsigned char *trama, int n);
 
 // FUNCIONES
-int		getTotales(byte ID, byte manguera);									// oK
-int		autorizar(byte ID, byte manguera, byte modo, long cantidad, byte *precioBDC);
-int		desautorizar(byte ID);													// oK
-int		getVenta( byte ID );													// oK
-int		getEstado(byte ID);														// oK
+int		getTotales(byte ID, byte manguera);							// oK
+int		autorizar(byte ID, byte manguera, byte *precioBDC);
+int		desautorizar(byte ID);										// oK
+int		getVenta( byte ID );										// oK
+int		getEstado(byte ID);											// oK
 
-int		setPrecio( byte ID, byte manguera, unsigned int PPU );					// Para despues.
+int		setPrecio( byte ID, byte manguera, unsigned int PPU );		// Para despues.
 
 /* ***************************************************************************************************
  *																									 *
  *****************************************************************************************************/
 SoftwareSerial SerialIgem(4, 7);    // RX, TX
 
-/* ***************************************************************************************************
- *                                               VENTAS                                              *
- *****************************************************************************************************/
-typedef struct          // Dato que se acaba de leer desde el protocolo.
-{
-	double			Volumen;	// 4
-	unsigned long	Venta;		// 4
-	unsigned int	PPU;		// 2
-	
-	unsigned long	Numeracion;		// 4
-}Venta;						// 23
-Venta   venta[6], venta2[6];    // Se actualiza en cada ciclo.
-
-// -------------------------
-typedef struct				// Dato que se acaba de leer desde el protocolo.
-{
-	byte			manguera;		// 1
-	double			Volumen;	// 4
-	unsigned long	Venta;	// 4
-	unsigned int	PPU;		// 2
-}VentaS2;					// 16
-
-// -------------------------
-typedef struct				// Dato que se acaba de leer desde el protocolo.
-{
-	byte			manguera;			// 1
-	unsigned long	Numeracion;			// 4
-}NumeracionS2;						// 16
-
-// ------------------------------------------------------------------------
-typedef struct    // 3 bytes
-{
-	byte manguera;
-	unsigned int PPU;
-} I2CPrecio;
 unsigned int PPUArray[6]={0, 0, 0, 0, 0, 0};    // 12 bytes
-
-// ------------------------------------------------------------------------
-typedef struct
-{
-	byte lado;
-	int mang;
-	byte modo;
-	double cantidad;
-} I2cAutoriza;
-I2cAutoriza   i2cAutoriza;
 
 /* ***************************************************************************************************
  *                                            VARIABLES                                              *
@@ -332,7 +252,7 @@ int		EnviarTrama2( byte ID, unsigned char *trama, int n )		// Con confirmacion.
 			if( (trama2[1]&0xf0) == 0xc0 ) return 1;    // Recibido Ok.
 			if( (trama2[1]&0xf0) == 0x50 ) ContEnvio[pos] = 0x30;    // Reiniciar el contador de envio en tarjeta FULL y en wayne.
 		}
-		delay(70);    Serial.print(F("delay - "));    Serial.println(millis());		// En caso de error.
+		delay(DELAYWAYNE);    Serial.print(F("delay - "));    Serial.println(millis());		// En caso de error.
 	}
 	ContEnvio[pos]++;
 	if(ContEnvio[pos]>0x3f) ContEnvio[pos] = 0x31;
@@ -598,10 +518,10 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			
 			Serial.print(F("F_PRECIO| "));
 			Serial.print(F("Manguera: "));      Serial.print(pre_mang);     
-			Serial.print(F(", Precio: "));			Serial.print(temp_precio);
-			Serial.print(F(", Est Ant: "));			Serial.print(mang_status[pos]);
-			Serial.print(F(", Estado: "));      Serial.print(precio_mang_status);
-			Serial.print(F(", index: "));      Serial.println(index);
+			Serial.print(F(", Precio: "));		Serial.print(temp_precio);
+			Serial.print(F(", Est Ant: "));		Serial.print(mang_status[pos]);
+			Serial.print(F(", Estado: "));		Serial.print(precio_mang_status);
+			Serial.print(F(", index: "));		Serial.println(index);
 			
 			if(temp_precio != 0)										// Si el precio en diferente de cero se actualiza.
 			{
@@ -616,13 +536,13 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			if( (mang_status[pos]==0)&&(precio_mang_status==1) )		// INICIO DE LA VENTA	***
 			{
 				//desautorizar(ID);
-				delay(100);
+				delay(DELAYWAYNE);
 				
 				Serial.println(F("INICIA VENTA *******"));
 				Serial.print(F("ID: "));  Serial.println(ID, HEX);
 				
 				//			AUTORIZACION
-				autorizar(ID, pre_mang, 0, 0, precioBDC);
+				autorizar(ID, pre_mang, precioBDC);
 				
 				mang_status[pos]=1;
 				F_ventaOk[pos] = 0;
@@ -789,36 +709,38 @@ int getVenta( byte ID )   // Llenar una estructura con la informacion de la vent
 }
 
 // ----------------------------------------------------------------------------------------------------
-int		autorizar(byte ID, byte manguera, byte modo, long cantidad, byte *precioBDC)			// Por ahora solo autoriza a cualquier monto.
+int		autorizar(byte ID, byte manguera, byte *precioBDC)			// Por ahora solo autoriza a cualquier monto.
 {
-	Serial.println();
-	Serial.println();
-	Serial.println();
 	Serial.println(F("Autorizar Venta *******"));
-	Serial.print(F("modo    : "));  Serial.println(modo);
-	Serial.print(F("mang    : "));  Serial.println(manguera);
+	Serial.print(F("ID   : "));	Serial.print(ID);	Serial.print(F(", mang : "));	Serial.println(manguera);
 	
+	if((i2cFuncion.funcion != AUTORIZAR)||(millis() > i2cFuncion.time))
+	{
+		Serial.println(F("*** No hay AUTORIZACION ***"));
+		return -1;
+	}
+
 	// probar si la manguera es la misma, sino, retorna.
 	Serial.println(F("--- i2cAutoriza ---"));
 	Serial.print(F("modo    : "));  Serial.println(i2cAutoriza.modo);
 	Serial.print(F("lado    : "));  Serial.println(i2cAutoriza.lado);
 	Serial.print(F("mang    : "));  Serial.println(i2cAutoriza.mang);
 	Serial.print(F("cantidad: "));  Serial.println(i2cAutoriza.cantidad);
-   
+  
 	if((manguera-1) != i2cAutoriza.mang)
 	{
 		Serial.println(F("*** Manguera DIFERENTE a la seleccionada ***"));
-		return -1;
+		return -2;
 	}
 
 	Serial.println(F("--- verifica lado ---"));
 	Serial.print(F("ID1    : "));  Serial.println(IDs[i2cAutoriza.lado], HEX);
 	Serial.print(F("ID2    : "));  Serial.println(ID, HEX);
 	Serial.println();
-  
+	
 	if( IDs[i2cAutoriza.lado] != ID )
 	{
-		Serial.println(F("Numero de lado o cara no corresponde a la autorizada"));
+		Serial.println(F("*** Numero de lado o cara no corresponde a la autorizada ***"));
 		return -1;
 	}
   
@@ -830,19 +752,16 @@ int		autorizar(byte ID, byte manguera, byte modo, long cantidad, byte *precioBDC
 	trama[3] = 0x01;
 	trama[4] = manguera;
 	EnviarTrama2(ID, trama, 3);        // 51 32 2 1 1 92 E4 3 fa
-	delay(80);
 	
 	trama[2] = 0x01;
 	trama[3] = 0x01;
 	trama[4] = 0x05;
 	EnviarTrama2(ID, trama, 3);        // 51 33 1 1 5 62 DB 3 fa
-	delay(80);
 	
 	trama[2] = 0x02;
 	trama[3] = 0x01;
 	trama[4] = manguera;
 	EnviarTrama2(ID, trama, 3);        // 51 34 2 1 1 92 6C 3 fa
-	delay(80);
 	
 	switch(i2cAutoriza.modo)
 	{
@@ -856,44 +775,37 @@ int		autorizar(byte ID, byte manguera, byte modo, long cantidad, byte *precioBDC
 		case 2: 
 			trama[2] = 0x03;     break;  // Volumen.   
 	}
-  
 	trama[3] = 0x04;
-  
-//  trama[4] = 0x00;
-  
-  // calcular el valor.
+	
+	// calcular el valor.
 	long ventaBin = i2cAutoriza.cantidad;
 	byte ventaBDC[8];
 	
 	ventaBDC[0] = 0x0f&((ventaBin%100000000)/10000000);
-	ventaBDC[1] =   0x0f&((ventaBin%10000000)/1000000);
-  
-	ventaBDC[2] = 0x0f&((ventaBin%1000000)/100000);
-	ventaBDC[3] =   0x0f&((ventaBin%100000)/10000);
-	ventaBDC[4] =     0x0f&((ventaBin%10000)/1000);
-	ventaBDC[5] =       0x0f&((ventaBin%1000)/100);
-	ventaBDC[6] =         0x0f&((ventaBin%100)/10);
-	ventaBDC[7] =           0x0f&(ventaBin%10);
+	ventaBDC[1] =  0x0f&((ventaBin%10000000)/1000000);
+	ventaBDC[2] =   0x0f&((ventaBin%1000000)/100000);
+	ventaBDC[3] =     0x0f&((ventaBin%100000)/10000);
+	ventaBDC[4] =       0x0f&((ventaBin%10000)/1000);
+	ventaBDC[5] =         0x0f&((ventaBin%1000)/100);
+	ventaBDC[6] =           0x0f&((ventaBin%100)/10);
+	ventaBDC[7] =             0x0f&(ventaBin%10);
 
 	trama[4] = (0xf0&(ventaBDC[0]<<4)) | (0x0f&ventaBDC[1]); // MSB
 	trama[5] = (0xf0&(ventaBDC[2]<<4)) | (0x0f&ventaBDC[3]); // MSB
 	trama[6] = (0xf0&(ventaBDC[4]<<4)) | (0x0f&ventaBDC[5]);
 	trama[7] = (0xf0&(ventaBDC[6]<<4)) | (0x0f&ventaBDC[7]); // LSB
-
 	EnviarTrama2(ID, trama, 6);        // 51 35 3 4 99 99 99 99 4 89 3 fa
-	delay(80);  // */
 
-  // __________________________________________________
 	trama[2] = 0x01;
 	trama[3] = 0x01;
 	trama[4] = 0x06;
 	EnviarTrama2(ID, trama, 3);        // 51 36 1 1 6 22 16 3 fa
-	delay(80);  // */
+
 	return 0;
 }
 
 // ----------------------------------------------------------------------------------------------------
-int    desautorizar(byte ID)
+int		desautorizar(byte ID)
 {
 	//  51 3E | 1 1 8 | A1 B2 | 3 FA  : 51 CONT  1 1 8 CRC 3 FA
 	//  51 CE FA
@@ -970,19 +882,19 @@ int		setPrecio( byte ID, byte manguera, unsigned int PPU )		// mierda
 	if(manguera==1) EnviarTrama2(ID, trama, 5);     // si manguera es 1.
 	if(manguera==2) EnviarTrama2(ID, trama, 8);     // si manguera es 2.
 	if(manguera==3) EnviarTrama2(ID, trama, 11);    // si manguera es 3.  */
-	delay(70);
+	delay(DELAYWAYNE);
   
 	trama[2] = 0x02;
 	trama[3] = 0x01;
 	trama[4] = manguera;
 	EnviarTrama2(ID, trama, 3);        // 51 32 2 1 1 92 E4 3 fa
-	delay(80);
+	delay(DELAYWAYNE);
   
 	trama[2] = 0x01;
 	trama[3] = 0x01;
 	trama[4] = 0x05;
 	EnviarTrama2(ID, trama, 3);        // 51 36 1 1 8 22 16 3 fa
-	delay(80);
+	delay(DELAYWAYNE);
   
 	trama[2] = 0x01;
 	trama[3] = 0x01;

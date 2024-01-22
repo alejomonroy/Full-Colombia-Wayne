@@ -1,17 +1,6 @@
 void RecibeRequisicionI2C( int howMany );
 
-void  delayx(long tiempo)
-{
-	long tinix;
-
-	tinix= millis();
-	while((millis()-tinix)<tiempo);
-}
-
-void  bzero(char *str, int tam)
-{
-	for(int i=0; i<tam; i++) str[i]=0;
-}
+void  bzero(char *str, int tam){	for(int i=0; i<tam; i++) str[i]=0;	}
 
 // -----------------------------------------------------------------
 char char2int(char input)
@@ -21,16 +10,6 @@ char char2int(char input)
 	if( ('A'<=input) && (input<='F') )  return (input-'A'+10);
 	return 0;
 }
-
-/* ******************************************************
- *               iButton           *
- ********************************************************/
-typedef struct
-{
-	char  id[18];
-	byte  lado;
-	int   Check;
-}Ibutton;
 
 /* ***************************************************************************************************
  *                                    Estructura de Configuracion                                    *
@@ -82,8 +61,7 @@ void LoopProtocolo_wayne()		// Codigo para comunicacion con surtidor Marca WAYNE
 	print_infoVenta(3);
 	print_infoVenta(4);
 	print_infoVenta(5);		// las 6 mangueras.
-	delayx(50);
-// */	
+	delay(DELAYWAYNE);
 }
 
 // ----------------------------------------------------------------------------------------------------
@@ -118,10 +96,10 @@ void Verificar_iButton(int cara)
 			char  strIbutton1[20];
 			strcpy(strIbutton1, F("innpe:1:iButton:"));
 		
-			Wire.beginTransmission(ARD_MEGA2560);
-			if( (cara==0)||(cara==2) )  Wire.write( strIbutton1 );    // 18
-			if( (cara==1)||(cara==3) )  Wire.write( strIbutton1 );    // 18
-			Wire.endTransmission();
+//			Wire.beginTransmission(ARD_MEGA2560);
+//			if( (cara==0)||(cara==2) )  Wire.write( strIbutton1 );    // 18
+//			if( (cara==1)||(cara==3) )  Wire.write( strIbutton1 );    // 18
+//			Wire.endTransmission();
 		
 			if( (cara==0)||(cara==2) )  Serial.print( F("innpe:1:iButton:") );    // 18
 			if( (cara==1)||(cara==3) )  Serial.print( F("innpe:1:iButton:") );    // 18
@@ -163,9 +141,9 @@ void Verificar_iButton(int cara)
 				strncpy(bufI2C, &strI2C[i*32], 32);
 				Serial.println(bufI2C);
 			
-				Wire.beginTransmission(ARD_MEGA2560);
-				Wire.write(bufI2C);
-				Wire.endTransmission();
+//				Wire.beginTransmission(ARD_MEGA2560);
+//				Wire.write(bufI2C);
+//				Wire.endTransmission();
 			
 				delay(7);
 			
@@ -173,9 +151,9 @@ void Verificar_iButton(int cara)
 			}
 			
 			// ------------------------------------
-			Wire.beginTransmission(ARD_MEGA2560);
-			Wire.write("END");            // 3
-			Wire.endTransmission();
+//			Wire.beginTransmission(ARD_MEGA2560);
+//			Wire.write("END");            // 3
+//			Wire.endTransmission();
 			Serial.println( F("END") );
 		
 		}
@@ -187,11 +165,8 @@ void Verificar_iButton(int cara)
 // ----------------------------------------------------------------------------------------------------
 void LoopI2C_Comunicacion()
 {
-	//--------------------------------------------------------------- */
-	//							VOLUMENES							  */
-	//--------------------------------------------------------------- */
 	// ------------------------------------ numeracion ------------------------------------
-	if( i2cFuncion.funcion == TOTALES )   // Solicitud de enviar venta. PRINCIPAL: MEGA2560
+	if((i2cFuncion.funcion == TOTALES)||(millis() < i2cFuncion.time))   // Solicitud de enviar venta. PRINCIPAL: MEGA2560
 	{
 		Numeracion  numeracion;
 		
@@ -203,10 +178,6 @@ void LoopI2C_Comunicacion()
 			numeracion.Numeracion2[i]=0;
 		}
 		
-		Serial.println(F("         ************************************"));
-		Serial.println(F("                       Volumenes             "));
-		Serial.println(F("         ************************************"));
-		
 		for(int i=1; i<=2; i++)				// Cada manguera. (1, 2, 3)
 		{
 			Serial.print(F("Manguera: "));	Serial.println(i);
@@ -214,22 +185,15 @@ void LoopI2C_Comunicacion()
 			for(int j=0; j<4; j++)			// Cada cara.
 			{
 				Serial.print(F("  Cara:"));		Serial.println(IDs[j], HEX);
-				
-				// i -> Manguera(1 , 2), j -> Cara(50, 51)
 				getTotales(IDs[j], i);		// primer argumento CARA, segundo argumento Manguera.
 				tmpnumeracion =0;
 				
-//				for(int k=0; k<4; k++)
-//				{
-					unsigned char trama[100];
-          
-					EnviarID(IDs[j]);       // ENVIAR ID.
-					res = RecibirTrama( trama );
-					if(res >= 3)   VerificaRecibido( trama, res);
+				unsigned char trama[100];
+		
+				EnviarID(IDs[j]);       // ENVIAR ID.
+				res = RecibirTrama( trama );
+				if(res >= 3)   VerificaRecibido( trama, res);
 
-//					if(tmpnumeracion != 0) break;
-//				}
-          // si tmpnumeracion==0 verificar el volumen de ultima venta y ver que ocurre.
 				if(tmpnumeracion == 0) continue;
 				
 				Serial.println();
@@ -293,67 +257,13 @@ void LoopI2C_Comunicacion()
 		i2cFuncion.funcion = 0;
 	} // FIN ENVIAR VENTA.
 	
-	//--------------------------------------------------------------- */
-	//						ESTADO DE MANGUERAS						  */
-	//--------------------------------------------------------------- */
-	if( i2cFuncion.funcion == ESTADO_M )			// Estado mangueras. ( ladoA, ladoB, ambos ).
-	{
-		Serial.println(F("INICIA ESTADO MANGUERAS..."));
-		Serial.print(F("M0: "));		Serial.println(mang_status[0]);
-		Serial.print(F("M1: "));		Serial.println(mang_status[1]);
-		Serial.print(F("M2: "));		Serial.println(mang_status[2]);
-		Serial.print(F("M3: "));		Serial.println(mang_status[3]);
-		
-		char  strTemp[25];
-		if( (strcmp(DatosI2C,"ladoA")==0)&&((mang_status[0]==1)||(mang_status[1]==1)) )                        // el estatus debe ser cero para OK.
-			strcpy( strTemp, F("innpe:1:estado:error") );
-		else
-		{
-			if( (strcmp(DatosI2C,"ladoB")==0)&&((mang_status[2]==1)||(mang_status[3]==1)) )                        // el estatus debe ser cero para OK.
-				strcpy( strTemp, F("innpe:1:estado:error") );
-			else
-			{
-				if(strcmp(DatosI2C,"ambos")==0)
-				{
-					Serial.println(F("ambos caras..."));
-					if((mang_status[0]==1)||
-					   (mang_status[1]==1)||
-					   (mang_status[2]==1)||
-					   (mang_status[3]==1)
-					  )   // el estatus debe ser cero para OK.
-						strcpy( strTemp, F("innpe:1:estado:error") );
-					else
-						strcpy( strTemp, F("innpe:1:estado:oK") );
-				}
-				else
-				{
-					strcpy( strTemp, F("innpe:1:estado:oK") );
-				}
-			}
-		}
-		
-		Serial.println(strTemp);
-		
-		Wire.beginTransmission(ARD_MEGA2560);
-		Wire.write( strTemp );
-		Wire.endTransmission();
-		
-		delayx(7);		// Este delay se debe a que se eliminaron los bloqueos en la libreria twi.
-		
-		Wire.beginTransmission(ARD_MEGA2560);
-		Wire.write( "END" );
-		Wire.endTransmission();
-		
-		Serial.println(F("FIN ESTADO MANGUERAS..."));
-		i2cFuncion.funcion = 0;
-	}
 	
 	if( i2cFuncion.funcion == 6 )
 	{
 		i2cFuncion.funcion = 0;
 	} // */
- 
-	if( PPUI2C == 7 )   // Actualizar precio de mangueras.
+	
+	if((i2cFuncion.funcion == PRECIOS)||(millis() < i2cFuncion.time))   // Actualizar precio de mangueras.
 	{
 		Serial.println(F("CAMBIANDO PRECIOS..."));
 		for(int i=0; i<6; i++)
@@ -374,120 +284,11 @@ void LoopI2C_Comunicacion()
 			}
 		}
 		
-		PPUI2C = 0;
 		i2cFuncion.funcion = 0;
 	} // 
 	
 }
 
-void requestEvent()			// QUE PASA SI FUERAN 2 O 3 MANGUERAS??????? @@@@@@
-{
-/*	if(millis()<5000) return;
-	
-	Serial.println(F("REQUESTEVENT"));
-	int i=0;
-
-	if(i2cFuncion.funcion == 0 ) return;
-	if(i2cFuncion.funcion == 1 ) i=0;		// solicitud en la cara 1.	VENTA
-	if(i2cFuncion.funcion == 2 ) i=0;		//							NUMERACION
-	if(i2cFuncion.funcion == 3 ) i=1;		// solicitud en la cara 2.	VENTA
-	if(i2cFuncion.funcion == 4 ) i=1;		//							NUMERACION
-	Serial.print(F("i2cFuncion.funcion: "));  Serial.println(i2cFuncion.funcion);
-	Serial.print(F("i: "));  Serial.println(i);
-	
-	if((i2cFuncion.funcion == 1 )||(i2cFuncion.funcion == 3 ))
-	{
-		int index = 3*i;
-		VentaS2 ventaS2;								// Se declara variable.
-		
-		ventaS2.manguera  = 	i;							// 1
-		ventaS2.Volumen   = 	venta[index].Volumen;		// 4
-		ventaS2.Venta   = 		venta[index].Venta;			// 4
-		ventaS2.PPU     = 		venta[index].PPU;				// 2
-		
-		strcpy( strI2C, "" );
-		tmpstr1 = (char*)(&ventaS2);
-		for(int j=0; j<sizeof(ventaS2); j++)
-		{
-			chari2c = tmpstr1[j];
-			
-			if( chari2c<16 )  sprintf( strI2C, "%s0%x", strI2C, chari2c );
-			else        sprintf( strI2C,  "%s%x", strI2C, chari2c );
-		}
-		Serial.println(strI2C);   // estructura que contiene la informacion a enviar.
-		Serial.print(F("millis: "));    Serial.println(millis());
-		
-		Wire.write(strI2C);
-	}
-	
-	if((i2cFuncion.funcion == 2 )||(i2cFuncion.funcion == 4 ))
-	{
-		int index = 2*i;
-		TotalS2 totalS2;
-		
-		totalS2.manguera	= i;							// 1
-		totalS2.Numeracion	= venta[index].Numeracion;		// 4
-		
-		strcpy( strI2C, "" );
-		tmpstr1 = (char*)(&totalS2);
-		for(int j=0; j<sizeof(totalS2); j++)
-		{
-			chari2c = tmpstr1[j];
-			
-			if( chari2c<16 )  sprintf( strI2C, "%s0%x", strI2C, chari2c );
-			else        sprintf( strI2C,  "%s%x", strI2C, chari2c );
-		}
-		Serial.println(strI2C);   // estructura que contiene la informacion a enviar.
-		Serial.print(F("millis: "));    Serial.println(millis());
-		
-		Wire.write(strI2C);
-	}
-	i2cFuncion.funcion =0; */
-}
-
-
-/*		int estadoPin;
-		int i=0;
-    
-		strcpy( strI2C, F("innpe:1:venta:") );		// No importa que cara si es A, B o C.
-		
-		// -------------------------
-		// ENVIAR DATOS AL ARDUINO PRINCIPAL.
-		tmpstr1 = (char*)(&venta);
-		for(int i=0; i<sizeof(venta); i++)
-		{
-			chari2c = tmpstr1[i];
-			
-			if( chari2c<16 )  sprintf( strI2C, "%s0%x", strI2C, chari2c );
-			else        sprintf( strI2C,  "%s%x", strI2C, chari2c );
-		}
-		Serial.println(strI2C);		// estructura que contiene la informacion a enviar. 182 bytes (2020-02-02).
-		
-		int    intTemp;
-		i=0;
-		intTemp = strlen(strI2C);
-		while( 32*i< intTemp )
-		{
-			char  bufI2C[55];
-			bzero(bufI2C, sizeof(bufI2C));
-      
-			strncpy(bufI2C, &strI2C[i*32], 32);
-			Serial.println(bufI2C);
-			
-			Wire.beginTransmission(ARD_MEGA2560);
-			Wire.write(bufI2C);
-			Wire.endTransmission();
-			
-			delayx(15);
-			i++;
-		}
-		
-		Wire.beginTransmission(ARD_MEGA2560);
-		Wire.write("END");
-		Wire.endTransmission();
-		
-		delayx(100); // */
-	
 // ---------------------------------------------------------------
 char *itostr( char *varstr, byte vardato )
 {
