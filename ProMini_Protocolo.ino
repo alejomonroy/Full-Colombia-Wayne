@@ -295,13 +295,6 @@ void Recibe_Comm_I2C( int howMany )	// Se mantiene sin informacion la interrupci
 		i2cFuncion.time = millis() + 100;
 	}
 	
-	// __________________________________________________SEND_NUM
-	if( strcmp_P( REQcomand, (PGM_P)F("send_num") )==0 )
-	{
-		i2cFuncion.funcion = SEND_NUM;
-		i2cFuncion.time = millis() + 100;
-	}
-	
 	// __________________________________________________
 	if( strcmp_P( REQcomand, (PGM_P)F("estado") )==0 )
 	{
@@ -393,13 +386,8 @@ byte	strcmpEDS(char *str1, char *str2, int	noChar)							// Retorna 0, o otro va
 	- el esclavo almacena la funcion con un timeout, si llega el requiest dentro del tiempo establecido, 
 		envia la informacion en secciones de 32 bytes.
 */
-void Request_I2C()			// QUE PASA SI FUERAN 2 O 3 MANGUERAS??????? @@@@@@
+void Request_I2C()
 {
-	/*
-		- Request de ventas.
-		- Request de estado de mangueras.
-		- Request de totales.
-	*/
 	if((i2cFuncion.funcion == VENTAS)||(millis() < i2cFuncion.time))
 		enviarVentas();
 
@@ -453,51 +441,48 @@ byte  enviarVentas()
 // -----------------------------------------------------------------------------------------------------
 byte  enviarEstado()
 {
-	if( i2cFuncion.funcion == ESTADO_M )
+	Serial.println(F("INICIA ESTADO MANGUERAS..."));
+	Serial.print(F("M0: "));		Serial.println(mang_status[0]);
+	Serial.print(F("M1: "));		Serial.println(mang_status[1]);
+	Serial.print(F("M2: "));		Serial.println(mang_status[2]);
+	Serial.print(F("M3: "));		Serial.println(mang_status[3]);
+	
+	char  strTemp[25];
+	if( (strcmp(DatosI2C,"ladoA")==0)&&((mang_status[0]==1)||(mang_status[1]==1)) )                        // el estatus debe ser cero para OK.
+		strcpy( strTemp, F("innpe:1:estado:error") );
+	else
 	{
-		Serial.println(F("INICIA ESTADO MANGUERAS..."));
-		Serial.print(F("M0: "));		Serial.println(mang_status[0]);
-		Serial.print(F("M1: "));		Serial.println(mang_status[1]);
-		Serial.print(F("M2: "));		Serial.println(mang_status[2]);
-		Serial.print(F("M3: "));		Serial.println(mang_status[3]);
-		
-		char  strTemp[25];
-		if( (strcmp(DatosI2C,"ladoA")==0)&&((mang_status[0]==1)||(mang_status[1]==1)) )                        // el estatus debe ser cero para OK.
+		if( (strcmp(DatosI2C,"ladoB")==0)&&((mang_status[2]==1)||(mang_status[3]==1)) )                        // el estatus debe ser cero para OK.
 			strcpy( strTemp, F("innpe:1:estado:error") );
 		else
 		{
-			if( (strcmp(DatosI2C,"ladoB")==0)&&((mang_status[2]==1)||(mang_status[3]==1)) )                        // el estatus debe ser cero para OK.
-				strcpy( strTemp, F("innpe:1:estado:error") );
+			if(strcmp(DatosI2C,"ambos")==0)
+			{
+				Serial.println(F("ambos caras..."));
+				if((mang_status[0]==1)||
+					(mang_status[1]==1)||
+					(mang_status[2]==1)||
+					(mang_status[3]==1)
+					)   // el estatus debe ser cero para OK.
+					strcpy( strTemp, F("innpe:1:estado:error") );
+				else
+					strcpy( strTemp, F("innpe:1:estado:oK") );
+			}
 			else
 			{
-				if(strcmp(DatosI2C,"ambos")==0)
-				{
-					Serial.println(F("ambos caras..."));
-					if((mang_status[0]==1)||
-					   (mang_status[1]==1)||
-					   (mang_status[2]==1)||
-					   (mang_status[3]==1)
-					  )   // el estatus debe ser cero para OK.
-						strcpy( strTemp, F("innpe:1:estado:error") );
-					else
-						strcpy( strTemp, F("innpe:1:estado:oK") );
-				}
-				else
-				{
-					strcpy( strTemp, F("innpe:1:estado:oK") );
-				}
+				strcpy( strTemp, F("innpe:1:estado:oK") );
 			}
 		}
-		
-		Serial.println(strTemp);
-		
-		Wire.write( strTemp );
-		delay(7);		// Este delay se debe a que se eliminaron los bloqueos en la libreria twi.
-		Wire.write( "END" );
-		
-		Serial.println(F("FIN ESTADO MANGUERAS..."));
-		i2cFuncion.funcion = 0;
 	}
+	
+	Serial.println(strTemp);
+	
+	Wire.write( strTemp );
+	delay(7);		// Este delay se debe a que se eliminaron los bloqueos en la libreria twi.
+	Wire.write( "END" );
+	
+	Serial.println(F("FIN ESTADO MANGUERAS..."));
+	i2cFuncion.funcion = 0;
 }
 
 byte  enviarNumeracion()
