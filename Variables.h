@@ -9,7 +9,7 @@ typedef struct                      // Dato que se acaba de leer desde el protoc
 	
 	unsigned long	Numeracion;     // 4
 }Venta;                             // 14
-Venta   venta[6];                   // 84
+Venta   venta[12];                   // 84
 
 /* ***************************************************************************************************
  *                                          COMUNICACION i2c                                         *
@@ -20,10 +20,6 @@ typedef struct
 	unsigned long time;
 } I2cFuncion;
 I2cFuncion	i2cFuncion;
-
-char  ardI2C[5];		// Chip que envia informacion.
-char  strI2C[190];		// Datos. cada vez que van llegando datos se van guardando. debe ser GLOBAL.
-byte  chari2c;
 
 char  DatosI2C[20];
 
@@ -64,3 +60,10 @@ typedef struct
 /* ***************************************************************************************************
  *																									 *
  *****************************************************************************************************/
+typedef struct
+{
+	byte	Num_Caras = 2;
+	byte	Num_Mang_1 = 2;
+	byte	Num_Mang_2 = 0;
+}	Configuracion;
+Configuracion Conf;

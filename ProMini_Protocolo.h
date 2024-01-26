@@ -1,5 +1,3 @@
-void RecibeRequisicionI2C( int howMany );
-
 void  bzero(char *str, int tam){	for(int i=0; i<tam; i++) str[i]=0;	}
 
 // -----------------------------------------------------------------
@@ -10,15 +8,6 @@ char char2int(char input)
 	if( ('A'<=input) && (input<='F') )  return (input-'A'+10);
 	return 0;
 }
-
-/* ***************************************************************************************************
- *                                    Estructura de Configuracion                                    *
- *****************************************************************************************************/
-typedef struct
-{
-	unsigned long Numeracion1[3];		// Cara 1.
-	unsigned long Numeracion2[3];		// Cara 2.
-}	Numeracion;
 
 // ----------------------------------------------------------------------------------------------------
 void LoopProtocolo_wayne()		// Codigo para comunicacion con surtidor Marca WAYNE.
@@ -108,7 +97,7 @@ void Verificar_iButton(int cara)
 			Ibutton ibutton;
 			strcpy(ibutton.id, Cod_iButton);
 			ibutton.lado = cara+1;
-		
+
 			int sumatoria=0;
 			for(int i=0; i<18; i++) sumatoria = sumatoria+ 0xff&((int)ibutton.id);
 			sumatoria = sumatoria+ (int)ibutton.lado;
@@ -117,13 +106,15 @@ void Verificar_iButton(int cara)
 			Serial.print(ibutton.Check);
 			Serial.print(" - ");
 			Serial.println(sumatoria);
-		
+
 			int i;
+			char		strI2C[100];
 			strI2C[0]=0;
+			char  *tmpstr1;
 			tmpstr1 = (char*)(&ibutton);
 			for(i=0; i<sizeof(ibutton); i++)
 			{
-				chari2c = tmpstr1[i];
+				char chari2c = tmpstr1[i];
 			
 				if( chari2c<16 )  sprintf( strI2C, "%s0%x", strI2C, chari2c );
 				else        sprintf( strI2C,  "%s%x", strI2C, chari2c );
@@ -166,30 +157,26 @@ void Verificar_iButton(int cara)
 void LoopI2C_Comunicacion()
 {
 	// ------------------------------------ numeracion ------------------------------------
-	if((i2cFuncion.funcion == TOTALES)||(millis() < i2cFuncion.time))   // Solicitud de enviar venta. PRINCIPAL: MEGA2560
+	if((i2cFuncion.funcion == NUMERACION)||(millis() < i2cFuncion.time))   // Solicitud de enviar venta. PRINCIPAL: MEGA2560
 	{
-		Numeracion  numeracion;
-		
 		Serial.print(F("(2). DatosI2C: "));    Serial.print(DatosI2C);    Serial.print(F(" - "));    Serial.println(millis());
 		
-		for(int i=0; i<4; i++)							// BORRAR NUMERACIONES.
+		for(int j=0; j<Conf.Num_Caras; j++)			// Cada cara.
 		{
-			numeracion.Numeracion1[i]=0;
-			numeracion.Numeracion2[i]=0;
-		}
-		
-		for(int i=1; i<=2; i++)				// Cada manguera. (1, 2, 3)
-		{
-			Serial.print(F("Manguera: "));	Serial.println(i);
+			byte Num_Mang = 0;
+			if((j==0)||(j==2)) Num_Mang= Conf.Num_Mang_1;
+			if((j==1)||(j==3)) Num_Mang= Conf.Num_Mang_2;
 			
-			for(int j=0; j<4; j++)			// Cada cara.
+			for(int i=1; i<=Num_Mang; i++)				// Cada manguera. (1, 2, 3)
 			{
+				Serial.print(F("Manguera: "));	Serial.println(i);
+
 				Serial.print(F("  Cara:"));		Serial.println(IDs[j], HEX);
 				getTotales(IDs[j], i);		// primer argumento CARA, segundo argumento Manguera.
 				tmpnumeracion =0;
 				
 				unsigned char trama[100];
-		
+        
 				EnviarID(IDs[j]);       // ENVIAR ID.
 				res = RecibirTrama( trama );
 				if(res >= 3)   VerificaRecibido( trama, res);
@@ -200,59 +187,12 @@ void LoopI2C_Comunicacion()
 				Serial.print(F("i-1: "));	Serial.print(i-1);	Serial.print(F(", j: "));	Serial.println(j);
 				Serial.print(F("numeracion: "));	Serial.println(tmpnumeracion);
 				
-				if(j==0)          numeracion.Numeracion1[i-1] = tmpnumeracion;    // volumen1_H - CARA A
-				if(j==1)          numeracion.Numeracion2[i-1] = tmpnumeracion;    // volumen2_H - CARA B
-				if(j==2)          numeracion.Numeracion1[2] = tmpnumeracion;    // volumen1_H - CARA A
-				if(j==3)          numeracion.Numeracion2[2] = tmpnumeracion;    // volumen2_H - CARA B
-
+				int index = j*3 + i;
+				venta[index].Numeracion = tmpnumeracion;
 			}
 		}
 		
-		Serial.println(F("VOLUMENES..."));
-		for(int i=0; i<3; i++)
-		{
-			Serial.print(numeracion.Numeracion1[i]);
-			Serial.print(F(" - "));
-			Serial.print(numeracion.Numeracion2[i]);	Serial.println(F("|"));
-		}
-		
-		// Enviar al PRINCIPAL los volumenes para el turno CIERRE/APERTURA.
-		strcpy( strI2C, F("innpe:1:numeracion:") );		// "innpe:1:numeracion:"
-		
-		// -------------------------
-		tmpstr1 = (char*)(&numeracion);
-		for(int i=0; i<sizeof(numeracion); i++)
-		{
-			chari2c = tmpstr1[i];
-			
-			if( chari2c<16 )  sprintf( strI2C, "%s0%x", strI2C, chari2c );
-			else        sprintf( strI2C,  "%s%x", strI2C, chari2c );
-		}
-		Serial.println(strI2C);		// estructura que contiene la informacion a enviar.
-		
-		int i=0;
-		int intTemp = strlen(strI2C);
-		while( 32*i< intTemp )
-		{
-			char  bufI2C[55];
-			bzero(bufI2C, sizeof(bufI2C));
-      
-			strncpy(bufI2C, &strI2C[i*32], 32);
-			Serial.println(bufI2C);
-			
-			Wire.beginTransmission(ARD_MEGA2560);
-			Wire.write(bufI2C);
-			Wire.endTransmission();
-			
-			i++;
-		}
-		
-		// --------------------------------------------------
-		Serial.println( F("Enviada traza I2C") );
-		
-		Wire.beginTransmission(ARD_MEGA2560);
-		Wire.write("END");
-		Wire.endTransmission();
+		Serial.println(F("Numeracion..."));
 		
 		i2cFuncion.funcion = 0;
 	} // FIN ENVIAR VENTA.

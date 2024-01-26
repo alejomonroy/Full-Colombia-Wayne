@@ -53,7 +53,6 @@ byte		F_globales[4]		= {0, 0, 0, 0};			// por CARA.
 byte    	UltManguera[4]		= {0, 0, 0, 0};			// por CARA.
 
 int res;
-unsigned long	tini_loop, tact_loop;
 
 /* ***************************************************************************************************
  *                              IMPLEMENTACION DE FUNCIONES MENOR NIVEL                              *
@@ -162,7 +161,7 @@ int    RecibirTrama( unsigned char *trama )  // Tiempo de espera = 100ms
 	
 //  Serial.println(F("punto 1"));
 	// recibir una trama hasta el fin de linea 0xfa
-	tini_loop = millis();
+	unsigned long	tini_loop = millis();
 	do
 	{
 		while(SerialIgem.available() > 0)
