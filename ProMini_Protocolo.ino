@@ -74,38 +74,6 @@ void strcpy(char* buf, const __FlashStringHelper *ifsh)
 #include "ProMini_Protocolo.h"
 
 /* ***************************************************************************************************
- *                                   Escribir Estructuras en EEPROM                                  *
- *****************************************************************************************************/
-void RD_Struct( unsigned int addr_eeprom, long tamano, char  *tmpstr )
-{
-	int  i;
-	char	tmpEEPROM;
-  
-	for(i=0; i<tamano; i++)
-	{
-		tmpEEPROM = EEPROM.read(i + addr_eeprom);
-		tmpstr[i] = tmpEEPROM;
-	}
-}
-
-// ---------------------------------------------------------------
-//                        FUNCIONES DE VENTAS
-// ---------------------------------------------------------------
-void print_infoVenta( uint8_t surtidor, uint8_t lado )		// muestra la ultima venta del surtidor.
-{
-  char  strVolumen[15];
-	
-	Serial.print( F("----- surtidor: ") );  Serial.print(surtidor);
-	Serial.print( F(", lado: ") );  Serial.println(lado);
-	
-	dtostrf( venta[surtidor][lado].Volumen, 4, 3, strVolumen);
-	Serial.print( F("Volumen: ") );     Serial.println( strVolumen );
-	Serial.print( F("Venta: ") );     Serial.println( venta[surtidor][lado].Venta );
-	Serial.print( F("PPU: ") );       Serial.println( venta[surtidor][lado].PPU );
-	Serial.print( F("Numeracion: ") );      Serial.println( venta[surtidor][lado].Numeracion );
-}
-
-/* ***************************************************************************************************
  *                                        Programa Principal                                         *
  *****************************************************************************************************/
 void setup()
