@@ -174,21 +174,18 @@ void LoopI2C_Comunicacion()
 	if((i2cFuncion.funcion == PRECIOS)||(millis() < i2cFuncion.time))   // Actualizar precio de mangueras.
 	{
 		Serial.println(F("CAMBIANDO PRECIOS..."));
-		for(int i=0; i<6; i++)
+		for(int surt=0; surt<Conf.Num_Surt; surt++)
 		{
-			if(PPUArray[i]!=0)
+			for(int lado=0; lado<2; lado++)
 			{
-				Serial.print(F("i  : "));        Serial.println(i);
-//				Serial.print(F("PPU:"));         Serial.println(PPUArray[i]);@@@@@@@@
-				if(i==0) setPrecio(IDs[0], 1, PPUArray[i]);
-				if(i==1) setPrecio(IDs[0], 2, PPUArray[i]);
-				if(i==2) setPrecio(IDs[2], 1, PPUArray[i]);
-		
-				if(i==3) setPrecio(IDs[1], 1, PPUArray[i]);
-				if(i==4) setPrecio(IDs[1], 2, PPUArray[i]);
-				if(i==5) setPrecio(IDs[3], 1, PPUArray[i]);
-			
-//				PPUArray[i]=0;@@@@@@@@
+				/*if(PPUArray[i]!=0)
+				{
+					Serial.print(F("i  : "));        Serial.println(i);
+					//Serial.print(F("PPU:"));         Serial.println(PPUArray[i]);@@@@@@@@
+					//setPrecio(IDs[surt][lado], 1, PPUArray[i]);
+
+					//PPUArray[i]=0;@@@@@@@@
+				}*/
 			}
 		}
 		

@@ -26,8 +26,8 @@ I2cFuncion	i2cFuncion;
 
 char  DatosI2C[20];
 
-int bytesTx;
-char txData[190];
+int		bytesWrite=0;
+char	txData[190];
 
 // ------------------------------------------------------------------------
 typedef struct    // 3 uint8_ts

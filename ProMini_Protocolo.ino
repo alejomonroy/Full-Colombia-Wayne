@@ -240,13 +240,12 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 	Serial.print( F("I2C. Comando: ") );   Serial.print(REQcomand);
 	
 	// __________________________________________________
-	if( strcmp_P( REQcomand, (PGM_P)F("ventas") )==0 )					// *** SE LLENA LA ESTRUCTURA Y SE TIENE LISTA PARA ENVIAR LOS DATOS SOLICITADOS ***
+	if( strcmp_P( REQcomand, (PGM_P)F("ventas") )==0 )						// *** SE LLENA LA ESTRUCTURA Y SE TIENE LISTA PARA ENVIAR LOS DATOS SOLICITADOS ***
 	{
 		i2cFuncion.funcion = VENTAS;
 		i2cFuncion.time = millis() + 2000;	// Timeout de 100ms.
 
-		// Los datos binarios los transforma en formato hexagesimal.
-		txData[0] = 0;
+		txData[0] = 0;														// Los datos binarios los transforma en formato hexagesimal.
 		char  *tmpstr1;
 		tmpstr1 = (char*)(&venta);
 		for(int i=0; i<sizeof(venta); i++)
@@ -256,9 +255,9 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 			if( chari2c<16 )  sprintf( txData, "%s0%x", txData, chari2c );
 			else        sprintf( txData,  "%s%x", txData, chari2c );
 		}
-		Serial.println(txData);					// estructura que contiene la informacion a enviar. 182 uint8_ts (2020-02-02).*/
+		Serial.println(txData);												// estructura que contiene la informacion a enviar. 182 uint8_ts (2020-02-02).*/
 
-		bytesTx=0;		// inicia envio de datos desde la posicion 0 del arreglo.
+		bytesWrite = 0;														// inicia envio de datos desde la posicion 0 del arreglo.
 	}
 
 	// __________________________________________________
@@ -276,7 +275,21 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 		Serial.println(F("Llega solicitud de enviar numeracion"));
 
 		i2cFuncion.funcion = SEND_NUM;
-		i2cFuncion.time = millis() + 100;
+		i2cFuncion.time = millis() + 2000;
+
+		txData[0] = 0;														// Los datos binarios los transforma en formato hexagesimal.
+		char  *tmpstr1;
+		tmpstr1 = (char*)(&numeracion);
+		for(int i=0; i<sizeof(numeracion); i++)
+		{
+			char chari2c = tmpstr1[i];
+			
+			if( chari2c<16 )  sprintf( txData, "%s0%x", txData, chari2c );
+			else        sprintf( txData,  "%s%x", txData, chari2c );
+		}
+		Serial.println(txData);												// estructura que contiene la informacion a enviar. 182 uint8_ts (2020-02-02).*/
+
+		bytesWrite = 0;														// inicia envio de datos desde la posicion 0 del arreglo.
 	}
 	
 	// __________________________________________________
@@ -329,10 +342,11 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 		} Serial.println();
 
 		if(i2cAutoriza.modo == 2)
-		i2cAutoriza.cantidad = i2cAutoriza.cantidad*1000;
+			i2cAutoriza.cantidad = i2cAutoriza.cantidad*1000;				// en modo de volumen.
 
 		// poner en cola de ejecucion.
 		Serial.print(F("modo    : "));  Serial.println(i2cAutoriza.modo);
+		Serial.print(F("Surtidor: "));  Serial.println(i2cAutoriza.surtidor);
 		Serial.print(F("lado    : "));  Serial.println(i2cAutoriza.lado);
 		Serial.print(F("mang    : "));  Serial.println(i2cAutoriza.mang);
 		Serial.print(F("cantidad: "));  Serial.println(i2cAutoriza.cantidad);
@@ -368,47 +382,34 @@ uint8_t	strcmpEDS(char *str1, char *str2, int	noChar)							// Retorna 0, o otro
 void Request_I2C()
 {
 	int bytesReq = Wire.available();
+	Serial.print(F("Request: "));	Serial.print(bytesReq);		Serial.print(F(" - "));	Serial.println(i2cFuncion.time-millis());
 
 	if((i2cFuncion.funcion == VENTAS)||(millis() < i2cFuncion.time))
 	{
-		enviarVentas();
+		char  bufI2C[33];
+		bzero(bufI2C, sizeof(bufI2C));
 
-		/*// Enviar los uint8_ts solicitados al maestro
-		for (int i = 0; i < bytesReq; i++) {
-			Wire.write(txData[dataIndex]);
-			bytesTx++;
-		}*/
+		strncpy(bufI2C, &txData[bytesWrite], bytesReq);
+		Serial.println(bufI2C);
+		
+		Wire.write(bufI2C);
+		delay(15);
 	}
 
 	if((i2cFuncion.funcion == ESTADO_M)||(millis() < i2cFuncion.time))
 		enviarEstado();
 
 	if((i2cFuncion.funcion == SEND_NUM)||(millis() < i2cFuncion.time))
-		enviarNumeracion();
-}
-
-// -----------------------------------------------------------------------------------------------------
-uint8_t  enviarVentas()
-{
-	// ENVIAR DATOS AL ARDUINO PRINCIPAL.
-	int		i=0;
-	int		intTemp = strlen(txData);
-
-	while( 32*i< intTemp )
 	{
-		char  bufI2C[55];
+		char  bufI2C[33];
 		bzero(bufI2C, sizeof(bufI2C));
-	
-		strncpy(bufI2C, &txData[i*32], 32);
+
+		strncpy(bufI2C, &txData[bytesWrite], bytesReq);
 		Serial.println(bufI2C);
 		
 		Wire.write(bufI2C);
 		delay(15);
-		i++;
 	}
-	
-	//Wire.write("END");
-	delay(DELAYWAYNE); // */
 }
 
 // -----------------------------------------------------------------------------------------------------
