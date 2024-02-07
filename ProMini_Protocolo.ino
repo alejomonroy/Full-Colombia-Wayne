@@ -96,7 +96,7 @@ void setup()
 	digitalWrite(RXE485,0);
 	
 	Wire.begin(ARD_PROTOCOLO);
-	Wire.onReceive(Recibe_Comm_I2C);
+	Wire.onReceive(Recibe_I2C);
 	Wire.onRequest(Request_I2C);
 	
 	pinMode(7,OUTPUT);
@@ -204,7 +204,7 @@ void getKeyCode(OneWire   ds, uint8_t *addr)   // Leer codigo iButton
 }*/
 
 // ------------------
-void Recibe_Comm_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
+void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 {
 	Serial.print(  F("I2C. howMany: ") );	Serial.println( howMany );
 	char		strI2C[100];		// Datos. cada vez que van llegando datos se van guardando. debe ser GLOBAL.
@@ -243,7 +243,7 @@ void Recibe_Comm_I2C( int howMany )	// Se mantiene sin informacion la interrupci
 	if( strcmp_P( REQcomand, (PGM_P)F("ventas") )==0 )					// *** SE LLENA LA ESTRUCTURA Y SE TIENE LISTA PARA ENVIAR LOS DATOS SOLICITADOS ***
 	{
 		i2cFuncion.funcion = VENTAS;
-		i2cFuncion.time = millis() + 100;	// Timeout de 100ms.
+		i2cFuncion.time = millis() + 2000;	// Timeout de 100ms.
 
 		// Los datos binarios los transforma en formato hexagesimal.
 		txData[0] = 0;
@@ -367,14 +367,14 @@ uint8_t	strcmpEDS(char *str1, char *str2, int	noChar)							// Retorna 0, o otro
 // -----------------------------------------------------------------------------------------------------
 void Request_I2C()
 {
-	int uint8_tsReq = Wire.available();
+	int bytesReq = Wire.available();
 
 	if((i2cFuncion.funcion == VENTAS)||(millis() < i2cFuncion.time))
 	{
 		enviarVentas();
 
 		/*// Enviar los uint8_ts solicitados al maestro
-		for (int i = 0; i < uint8_tsReq; i++) {
+		for (int i = 0; i < bytesReq; i++) {
 			Wire.write(txData[dataIndex]);
 			bytesTx++;
 		}*/

@@ -47,34 +47,37 @@ void LoopProtocolo_wayne()		// Codigo para comunicacion con surtidor Marca WAYNE
 {
 	int manguera=0;
 	
-	for( int i=0; i<4; i++ )	// 
+	for( int surt=0; surt<Conf.Num_Surt; surt++ )	// surtidores
 	{
-		unsigned char trama[100];
+		for( int lado=0; lado<2; lado++ )	// surtidores
+		{
+			unsigned char trama[100];
 
-		// -------------------------------------------------
-		if((0x01&ContLoop)==0)
-			Verificar_iButton(i);
-		
-		// ------------------- ENVIAR ID -------------------
-		getEstado(IDs[i]);
-		res = RecibirTrama( trama );
-		if(res >= 3)   manguera = VerificaRecibido( trama, res);
-		delay(DELAYWAYNE);
-		
-		EnviarID(IDs[i]);
-		res = RecibirTrama( trama );
-		if(res >= 3)   manguera = VerificaRecibido( trama, res);
-		delay(DELAYWAYNE);
-		
-		EnviarID(IDs[i]);
-		res = RecibirTrama( trama );
-		if(res >= 3)   manguera = VerificaRecibido( trama, res);
-		delay(DELAYWAYNE);
-		
-		EnviarID(IDs[i]);
-		res = RecibirTrama( trama );
-		if(res >= 3)   manguera = VerificaRecibido( trama, res);
-		delay(DELAYWAYNE);
+			// -------------------------------------------------
+			if((0x01&ContLoop)==0)
+				Verificar_iButton(lado);
+			
+			// ------------------- ENVIAR ID -------------------
+			getEstado(IDs[surt][lado]);
+			res = RecibirTrama( trama );
+			if(res >= 3)   manguera = VerificaRecibido( trama, res);
+			delay(DELAYWAYNE);
+			
+			EnviarID(IDs[surt][lado]);
+			res = RecibirTrama( trama );
+			if(res >= 3)   manguera = VerificaRecibido( trama, res);
+			delay(DELAYWAYNE);
+			
+			EnviarID(IDs[surt][lado]);
+			res = RecibirTrama( trama );
+			if(res >= 3)   manguera = VerificaRecibido( trama, res);
+			delay(DELAYWAYNE);
+			
+			EnviarID(IDs[surt][lado]);
+			res = RecibirTrama( trama );
+			if(res >= 3)   manguera = VerificaRecibido( trama, res);
+			delay(DELAYWAYNE);
+		}
 	}
 
 	print_infoVenta(0, 0);
