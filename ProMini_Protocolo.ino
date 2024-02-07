@@ -11,7 +11,7 @@
 #include <OneWire.h>
 #include <EEPROM.h>
 
-//byte  PARIDAD;
+//uint8_t  PARIDAD;
 //#define    PAR     0
 //#define   IMPAR   1
 
@@ -49,9 +49,9 @@ void getKeyCode(OneWire   ds);   // Leer codigo iButton
 
 // ------------------------------------------------------------------------------------------------------
 //    DECLARACION DE FUNCIONES.
-byte  enviarVenta( byte pos );
+uint8_t  enviarVenta( uint8_t pos );
 
-void print_infoVenta( byte varManguera);
+void print_infoVenta(uint8_t surtidor, uint8_t lado);
 void Verificar_iButton(int cara);
 
 void RecibeRequisicionI2C( int howMany );
@@ -91,17 +91,18 @@ void RD_Struct( unsigned int addr_eeprom, long tamano, char  *tmpstr )
 // ---------------------------------------------------------------
 //                        FUNCIONES DE VENTAS
 // ---------------------------------------------------------------
-void print_infoVenta( byte pos )
+void print_infoVenta( uint8_t surtidor, uint8_t lado )		// muestra la ultima venta del surtidor.
 {
   char  strVolumen[15];
 	
-	Serial.print( F("----- POS ----- ") );     Serial.println( pos );
+	Serial.print( F("----- surtidor: ") );  Serial.print(surtidor);
+	Serial.print( F(", lado: ") );  Serial.println(lado);
 	
-	dtostrf( venta[pos].Volumen, 4, 3, strVolumen);
+	dtostrf( venta[surtidor][lado].Volumen, 4, 3, strVolumen);
 	Serial.print( F("Volumen: ") );     Serial.println( strVolumen );
-	Serial.print( F("Venta: ") );     Serial.println( venta[pos].Venta );
-	Serial.print( F("PPU: ") );       Serial.println( venta[pos].PPU );
-	Serial.print( F("Numeracion: ") );      Serial.println( venta[pos].Numeracion );
+	Serial.print( F("Venta: ") );     Serial.println( venta[surtidor][lado].Venta );
+	Serial.print( F("PPU: ") );       Serial.println( venta[surtidor][lado].PPU );
+	Serial.print( F("Numeracion: ") );      Serial.println( venta[surtidor][lado].Numeracion );
 }
 
 /* ***************************************************************************************************
@@ -135,12 +136,12 @@ void setup()
 	
 	// --------------- RESETEAR DATOS DE LAS DOS MANGUERAS DE ESTA CARA -------------------
 	Serial.println( F("---------------------------") );
-	print_infoVenta(0);
-	print_infoVenta(1);
-	print_infoVenta(2);
-	print_infoVenta(3);
-	print_infoVenta(4);
-	print_infoVenta(5);   // las 6 mangueras.
+	print_infoVenta(0, 0);
+	print_infoVenta(0, 1);
+	print_infoVenta(1, 0);
+	print_infoVenta(1, 1);
+	print_infoVenta(2, 0);
+	print_infoVenta(2, 1);   // los 6 lados.
 	Serial.println( F("---------------------------") );
 	
 	// ----------------------------------------------------------------------
@@ -179,13 +180,13 @@ void setup()
 		res = RecibirTrama( trama );
 		if(res >= 3)   manguera = VerificaRecibido( trama, res);
 		delay(DELAYWAYNE);
-	} */
+	}
 	print_infoVenta(0);
 	print_infoVenta(1);
 	print_infoVenta(2);
 	print_infoVenta(3);
 	print_infoVenta(4);
-	print_infoVenta(5);   // las 6 mangueras.
+	print_infoVenta(5);   // las 6 mangueras. */
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -202,10 +203,10 @@ void loop()
 /* ***************************************************************************************************
  *                                              iButton                                              *
  *****************************************************************************************************/
-void getKeyCode(OneWire   ds, byte *addr)   // Leer codigo iButton
+void getKeyCode(OneWire   ds, uint8_t *addr)   // Leer codigo iButton
 {
-	byte present = 0;
-	byte data[12];
+	uint8_t present = 0;
+	uint8_t data[12];
 	keyStatus=F("");
 	
 	if ( !ds.search(addr))
@@ -239,7 +240,7 @@ void Recibe_Comm_I2C( int howMany )	// Se mantiene sin informacion la interrupci
 {
 	Serial.print(  F("I2C. howMany: ") );	Serial.println( howMany );
 	char		strI2C[100];		// Datos. cada vez que van llegando datos se van guardando. debe ser GLOBAL.
-	volatile	byte  varI = 0;
+	volatile	uint8_t  varI = 0;
 
 	while (Wire.available() > 0)
 	{
@@ -271,10 +272,25 @@ void Recibe_Comm_I2C( int howMany )	// Se mantiene sin informacion la interrupci
 	Serial.print( F("I2C. Comando: ") );   Serial.print(REQcomand);
 	
 	// __________________________________________________
-	if( strcmp_P( REQcomand, (PGM_P)F("ventas") )==0 )
+	if( strcmp_P( REQcomand, (PGM_P)F("ventas") )==0 )					// *** SE LLENA LA ESTRUCTURA Y SE TIENE LISTA PARA ENVIAR LOS DATOS SOLICITADOS ***
 	{
 		i2cFuncion.funcion = VENTAS;
 		i2cFuncion.time = millis() + 100;	// Timeout de 100ms.
+
+		// Los datos binarios los transforma en formato hexagesimal.
+		txData[0] = 0;
+		char  *tmpstr1;
+		tmpstr1 = (char*)(&venta);
+		for(int i=0; i<sizeof(venta); i++)
+		{
+			char chari2c = tmpstr1[i];
+			
+			if( chari2c<16 )  sprintf( txData, "%s0%x", txData, chari2c );
+			else        sprintf( txData,  "%s%x", txData, chari2c );
+		}
+		Serial.println(txData);					// estructura que contiene la informacion a enviar. 182 uint8_ts (2020-02-02).*/
+
+		bytesTx=0;		// inicia envio de datos desde la posicion 0 del arreglo.
 	}
 
 	// __________________________________________________
@@ -287,7 +303,7 @@ void Recibe_Comm_I2C( int howMany )	// Se mantiene sin informacion la interrupci
 	}
 	
 	// __________________________________________________
-	if( strcmp_P( REQcomand, (PGM_P)F("sendNum") )==0 )
+	if( strcmp_P( REQcomand, (PGM_P)F("sendNum") )==0 )		// REQUEST.
 	{
 		Serial.println(F("Llega solicitud de enviar numeracion"));
 
@@ -296,7 +312,7 @@ void Recibe_Comm_I2C( int howMany )	// Se mantiene sin informacion la interrupci
 	}
 	
 	// __________________________________________________
-	if( strcmp_P( REQcomand, (PGM_P)F("estado") )==0 )
+	if( strcmp_P( REQcomand, (PGM_P)F("estado") )==0 )		// REQUEST.
 	{
 		i2cFuncion.funcion = ESTADO_M;
 		i2cFuncion.time = millis() + 100;
@@ -307,7 +323,7 @@ void Recibe_Comm_I2C( int howMany )	// Se mantiene sin informacion la interrupci
 	{
 		Serial.println(F("ORDEN CAMBIAR PRECIOS..."));
 		i2cFuncion.funcion = PRECIOS;
-		i2cFuncion.time = millis() + 2000;		// La vigencia del comando.
+		i2cFuncion.time = millis() + 1000;		// La vigencia del comando.
 
 		I2CPrecio i2cPrecio;
 		int size = sizeof(i2cPrecio);
@@ -321,7 +337,7 @@ void Recibe_Comm_I2C( int howMany )	// Se mantiene sin informacion la interrupci
 		} Serial.println();
 
 	    // poner en cola de ejecucion.
-		PPUArray[i2cPrecio.manguera] = i2cPrecio.PPU;
+//		PPUArray[i2cPrecio.manguera] = i2cPrecio.PPU;@@@@@@@@
 		Serial.print(F("Manguera: "));                Serial.println(i2cPrecio.manguera);
 		Serial.print(F("PPU     : "));                Serial.println(i2cPrecio.PPU);
 	} // */
@@ -369,7 +385,7 @@ void Recibe_Comm_I2C( int howMany )	// Se mantiene sin informacion la interrupci
 
 /*
 // -----------------------------------------------------------------------------------------------------
-byte	strcmpEDS(char *str1, char *str2, int	noChar)							// Retorna 0, o otro valor cuando son diferentes.
+uint8_t	strcmpEDS(char *str1, char *str2, int	noChar)							// Retorna 0, o otro valor cuando son diferentes.
 {
 	int		i;
 	
@@ -381,15 +397,20 @@ byte	strcmpEDS(char *str1, char *str2, int	noChar)							// Retorna 0, o otro va
 }
 */
 // -----------------------------------------------------------------------------------------------------
-/*
-	- master envia el comando en el cual solicita las ventas, finalmente envia el request por secciones de 32 bytes.
-	- el esclavo almacena la funcion con un timeout, si llega el requiest dentro del tiempo establecido, 
-		envia la informacion en secciones de 32 bytes.
-*/
 void Request_I2C()
 {
+	int uint8_tsReq = Wire.available();
+
 	if((i2cFuncion.funcion == VENTAS)||(millis() < i2cFuncion.time))
+	{
 		enviarVentas();
+
+		/*// Enviar los uint8_ts solicitados al maestro
+		for (int i = 0; i < uint8_tsReq; i++) {
+			Wire.write(txData[dataIndex]);
+			bytesTx++;
+		}*/
+	}
 
 	if((i2cFuncion.funcion == ESTADO_M)||(millis() < i2cFuncion.time))
 		enviarEstado();
@@ -399,34 +420,18 @@ void Request_I2C()
 }
 
 // -----------------------------------------------------------------------------------------------------
-byte  enviarVentas()
+uint8_t  enviarVentas()
 {
-	char		strI2C[190];		// Datos. cada vez que van llegando datos se van guardando. debe ser GLOBAL.
-	strcpy( strI2C, F("innpe:1:venta:") );
-	
-	// -------------------------
-	// Los datos binarios los transforma en formato hexagesimal.
-	char  *tmpstr1;
-	tmpstr1 = (char*)(&venta);
-	for(int i=0; i<sizeof(venta); i++)
-	{
-		char chari2c = tmpstr1[i];
-		
-		if( chari2c<16 )  sprintf( strI2C, "%s0%x", strI2C, chari2c );
-		else        sprintf( strI2C,  "%s%x", strI2C, chari2c );
-	}
-	Serial.println(strI2C);		// estructura que contiene la informacion a enviar. 182 bytes (2020-02-02).
-	
 	// ENVIAR DATOS AL ARDUINO PRINCIPAL.
 	int		i=0;
-	int		intTemp = strlen(strI2C);
+	int		intTemp = strlen(txData);
 
 	while( 32*i< intTemp )
 	{
 		char  bufI2C[55];
 		bzero(bufI2C, sizeof(bufI2C));
 	
-		strncpy(bufI2C, &strI2C[i*32], 32);
+		strncpy(bufI2C, &txData[i*32], 32);
 		Serial.println(bufI2C);
 		
 		Wire.write(bufI2C);
@@ -434,18 +439,20 @@ byte  enviarVentas()
 		i++;
 	}
 	
-	Wire.write("END");
+	//Wire.write("END");
 	delay(DELAYWAYNE); // */
 }
 
 // -----------------------------------------------------------------------------------------------------
-byte  enviarEstado()
+uint8_t  enviarEstado()
 {
 	Serial.println(F("INICIA ESTADO MANGUERAS..."));
-	Serial.print(F("M0: "));		Serial.println(mang_status[0]);
-	Serial.print(F("M1: "));		Serial.println(mang_status[1]);
-	Serial.print(F("M2: "));		Serial.println(mang_status[2]);
-	Serial.print(F("M3: "));		Serial.println(mang_status[3]);
+	Serial.print(F("S1, L1: "));		Serial.println(mang_status[0][0]);
+	Serial.print(F("S1, L2: "));		Serial.println(mang_status[0][1]);
+	Serial.print(F("S2, L1: "));		Serial.println(mang_status[1][0]);
+	Serial.print(F("S2, L2: "));		Serial.println(mang_status[1][1]);
+	Serial.print(F("S3, L1: "));		Serial.println(mang_status[2][0]);
+	Serial.print(F("S3, L2: "));		Serial.println(mang_status[2][1]);
 	
 	char  strTemp[25];
 	if( (strcmp(DatosI2C,"ladoA")==0)&&((mang_status[0]==1)||(mang_status[1]==1)) )                        // el estatus debe ser cero para OK.
@@ -485,15 +492,13 @@ byte  enviarEstado()
 	i2cFuncion.funcion = 0;
 }
 
-byte  enviarNumeracion()
+uint8_t  enviarNumeracion()
 {
-	unsigned long	numeracion[12];
-	int				index;
-	char			strI2C[190];		// Datos. cada vez que van llegando datos se van guardando. debe ser GLOBAL.
+	char			strI2C[190];							// Datos. cada vez que van llegando datos se van guardando. debe ser GLOBAL.
 
-	for(int j=0; j<Conf.Num_Caras; j++)			// Cada cara.
+	/*for(int j=0; j<(2*Conf.Num_Surt); j++)			// Cada cara.
 	{
-		byte Num_Mang = 0;
+		uint8_t Num_Mang = 0;
 		if((j==0)||(j==2)) Num_Mang= Conf.Num_Mang_1;
 		if((j==1)||(j==3)) Num_Mang= Conf.Num_Mang_2;
 		
@@ -503,7 +508,23 @@ byte  enviarNumeracion()
 			int index = j*3 + i;
 			numeracion[index] = venta[index].Numeracion;
 		}
-	}
+	}*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	// Enviar al PRINCIPAL los volumenes para el turno CIERRE/APERTURA.
 	strcpy( strI2C, F("innpe:1:numeracion:") );		// "innpe:1:numeracion:"

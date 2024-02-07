@@ -18,48 +18,48 @@
  *****************************************************************************************************/
 // FUNCIONES DE MENOR NIVEL
 long	get_crc_16( unsigned char *buf, int size );					// oK
-int		EnviarID(byte ID);											// oK
-int		EnviarTrama( byte ID, unsigned char *trama, int	n );		// oK
+int		EnviarID(uint8_t ID);											// oK
+int		EnviarTrama( uint8_t ID, unsigned char *trama, int	n );		// oK
 int		RecibirTrama( unsigned char *trama );						// oK		****
-int		CerrarComunicacion(byte ID, byte consecutivo);				// oK
+int		CerrarComunicacion(uint8_t ID, uint8_t consecutivo);				// oK
 int		VerificaRecibido( unsigned char *trama, int n);
 
 // FUNCIONES
-int		getTotales(byte ID, byte manguera);							// oK
-int		autorizar(byte ID, byte manguera, byte *precioBDC);
-int		desautorizar(byte ID);										// oK
-int		getVenta( byte ID );										// oK
-int		getEstado(byte ID);											// oK
+int		getTotales(uint8_t ID, uint8_t manguera);							// oK
+int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precioBDC);
+int		desautorizar(uint8_t ID);										// oK
+int		getVenta( uint8_t ID );										// oK
+int		getEstado(uint8_t ID);											// oK
 
-int		setPrecio( byte ID, byte manguera, unsigned int PPU );		// Para despues.
+int		setPrecio( uint8_t ID, uint8_t manguera, unsigned int PPU );		// Para despues.
 
 /* ***************************************************************************************************
  *																									 *
  *****************************************************************************************************/
 SoftwareSerial SerialIgem(4, 7);    // RX, TX
 
-unsigned int PPUArray[6]={0, 0, 0, 0, 0, 0};    // 12 bytes
+unsigned int PPUArray[3][2]={0, 0, 0, 0, 0, 0};    // 12 uint8_ts
 
 /* ***************************************************************************************************
  *                                            VARIABLES                                              *
  *****************************************************************************************************/
-byte		mang_status[4] = {0 ,0 ,0 ,0};				// por CARA.
-byte		IDs[4]= {0x50, 0x51, 0x52, 0x53};
+uint8_t		mang_status[3][2] = { {0,0}, {0 ,0}, {0 ,0} };				// por CARA.
+uint8_t		IDs[3][2]= { {0x50, 0x51}, {0x52, 0x53}, {0x54, 0x55}};
 
-byte		F_ventaOk[4]		= {0, 0, 0, 0};			// por CARA.
-byte		F_enviado[4]		= {0, 0, 0, 0};			// por CARA.
+uint8_t		F_ventaOk[3][2]		= { {0,0}, {0 ,0}, {0 ,0} };			// por CARA.
+uint8_t		F_enviado[3][2]		= { {0,0}, {0 ,0}, {0 ,0} };			// por CARA.
 
-byte		F_globales[4]		= {0, 0, 0, 0};			// por CARA.
-byte    	UltManguera[4]		= {0, 0, 0, 0};			// por CARA.
+uint8_t		F_globales[3][2]	= { {0,0}, {0 ,0}, {0 ,0} };			// por CARA.
+uint8_t    	UltManguera[3][2]	= { {0,0}, {0 ,0}, {0 ,0} };			// por CARA.
 
 int res;
 
 /* ***************************************************************************************************
  *                              IMPLEMENTACION DE FUNCIONES MENOR NIVEL                              *
  *****************************************************************************************************/
-// Primero se envia el byte menos significativo
-// despues el byte mas significativo, se calcula con toda la trama, incluyendo el ID de la cara.
-byte	crc_error;
+// Primero se envia el uint8_t menos significativo
+// despues el uint8_t mas significativo, se calcula con toda la trama, incluyendo el ID de la cara.
+uint8_t	crc_error;
 long get_crc_16( unsigned char *buf, int size )
 {
 	int   k;
@@ -85,7 +85,7 @@ long get_crc_16( unsigned char *buf, int size )
 
 // ----------------------------------------------------------------------------------------------------
 // Medir tiempos medios en recibir respuesta, sacar promedio y esperar maximo doble o triple de estos tiempos.
-int		EnviarID( byte ID )
+int		EnviarID( uint8_t ID )
 {
 	digitalWrite(TXE485,RS485Transmit);  digitalWrite(RXE485,RS485Transmit);
 	
@@ -104,24 +104,19 @@ int		EnviarID( byte ID )
 unsigned char ContRecepcion = 0x30;
 
 // ----------------------------------------------------------------------------------------------------
-byte   ContEnvio[4] = {0x30, 0x30, 0x30, 0x30};		// las caras posibles.
+uint8_t   ContEnvio[3][2] = { {0x30, 0x30}, {0x30, 0x30}, {0x30, 0x30} };		// las caras posibles.
 
-int    EnviarTrama( byte ID, unsigned char *trama, int n ) // 51 36 Trama crc 03 FA    // Ejp. | 50 | 33 | 65 1 2 | 62 C6 | 3 FA
+int    EnviarTrama( uint8_t ID, unsigned char *trama, int n ) // 51 36 Trama crc 03 FA    // Ejp. | 50 | 33 | 65 1 2 | 62 C6 | 3 FA
 {
 	int i;
 	unsigned int crc;
-	int pos = -1;
 	
-	// ----------------------------------------------------------------
-	if(ID == IDs[0]) pos = 0;
-	if(ID == IDs[1]) pos = 1;
-	if(ID == IDs[2]) pos = 2;
-	if(ID == IDs[3]) pos = 3;
-	if(pos < 0) return 0;
+	int lado = (0x0f & ID)%2;
+	int surt = (0x0f & ID)/2;
 	
 	// ----------------------------------------------------------------
 	trama[0] = ID;
-	trama[1] = ContEnvio[pos];
+	trama[1] = ContEnvio[surt][lado];
 	n=n+2;
 	
 	crc = get_crc_16( trama, n );
@@ -223,16 +218,13 @@ int    RecibirTrama( unsigned char *trama )  // Tiempo de espera = 100ms
 }
 
 // ----------------------------------------------------------------------------------------------------
-int		EnviarTrama2( byte ID, unsigned char *trama, int n )		// Con confirmacion.
+int		EnviarTrama2( uint8_t ID, unsigned char *trama, int n )		// Con confirmacion.
 {
 	unsigned char trama2[10];
-	int pos=-1;
-	if(ID == IDs[0]) pos = 0;
-	if(ID == IDs[1]) pos = 1;
-	if(ID == IDs[2]) pos = 2;
-	if(ID == IDs[3]) pos = 3;
-	if(pos < 0) return 0;
 	
+	int lado = (0x0f & ID)%2;
+	int surt = (0x0f & ID)/2;
+
 	for(int i=0; i<3; i++)
 	{
 		EnviarTrama(ID, trama, n);        // Envia solicitud de volumen.    51 35 | 1 1 0 | A2 50 | 3 FA
@@ -246,21 +238,21 @@ int		EnviarTrama2( byte ID, unsigned char *trama, int n )		// Con confirmacion.
 		}
 		if(res>=3)			// No se recibio nada.
 		{
-			ContEnvio[pos]++;
-			if(ContEnvio[pos]>0x3f) ContEnvio[pos] = 0x31;
+			ContEnvio[surt][lado]++;
+			if(ContEnvio[lado]>0x3f) ContEnvio[surt][lado] = 0x31;
 			if( (trama2[1]&0xf0) == 0xc0 ) return 1;    // Recibido Ok.
-			if( (trama2[1]&0xf0) == 0x50 ) ContEnvio[pos] = 0x30;    // Reiniciar el contador de envio en tarjeta FULL y en wayne.
+			if( (trama2[1]&0xf0) == 0x50 ) ContEnvio[surt][lado] = 0x30;    // Reiniciar el contador de envio en tarjeta FULL y en wayne.
 		}
 		delay(DELAYWAYNE);    Serial.print(F("delay - "));    Serial.println(millis());		// En caso de error.
 	}
-	ContEnvio[pos]++;
-	if(ContEnvio[pos]>0x3f) ContEnvio[pos] = 0x31;
+	ContEnvio[surt][lado]++;
+	if(ContEnvio[surt][lado]>0x3f) ContEnvio[surt][lado] = 0x31;
 	
 	return -1;
 }
 
 // ----------------------------------------------------------------------------------------------------
-int    CerrarComunicacion(byte ID, byte consecutivo)
+int    CerrarComunicacion(uint8_t ID, uint8_t consecutivo)
 {
 	/*  Surt  50 CE FA  */
 	digitalWrite(TXE485,RS485Transmit);
@@ -284,45 +276,43 @@ int    CerrarComunicacion(byte ID, byte consecutivo)
 // si llega 52 c3 fa (return 1) o 52 53 c3 (return -3)
 unsigned long tmpnumeracion = 0;
 
-byte	finalVenta=0;
-byte  	validarDatos=0;		// Un ciclo de retraso para que valide datos.
+uint8_t	finalVenta=0;
+uint8_t  	validarDatos=0;		// Un ciclo de retraso para que valide datos.
 
 int		VerificaRecibido( unsigned char *trama, int n)
 {
-	byte	ret=0;
-	byte	F_locales = 0;
+	uint8_t	ret=0;
+	uint8_t	F_locales = 0;
 	
 	// Funcion volumenes totales
-	byte total_mang = 0;				// cual fue la manguera que llega su total.
+	uint8_t total_mang = 0;				// cual fue la manguera que llega su total.
 	
 	// Funcion precios
-	byte precioBDC[5] = { 0, 0, 0, 0, 0 };
+	uint8_t precioBDC[5] = { 0, 0, 0, 0, 0 };
 	unsigned int temp_precio = 0;
-	byte pre_mang = 0;
-	byte precio_mang_status = 0;
-	byte temp_estado = IDLE1;
+	uint8_t pre_mang = 0;
+	uint8_t precio_mang_status = 0;
+	uint8_t temp_estado = IDLE1;
 
 	// Funcion precios
 	unsigned long tempvolumen=0;
 	unsigned long tempventa =0;
 	
 	//VERIFICACION DE CUAL CARA ES.
-	int pos=-1;
-	byte ID=0;
+	uint8_t ID=0;
 	unsigned int crc;
 	int i=0;
 	
 	// --------------------------------------------------
 	ID = trama[0];
-	if(ID == IDs[0]) pos = 0;
-	if(ID == IDs[1]) pos = 1;
-	if(ID == IDs[2]) pos = 2;
-	if(ID == IDs[3]) pos = 3;
 
-	if(pos < 0) return 0;
+	int lado = (0x0f & ID)%2;
+	int surt = (0x0f & ID)/2;
+
+	if(lado < 0) return 0;
 	
 	// --------------------------------------------------
-	if(n<3)	return -1;						// No hay trazas de menos de tres bytes.
+	if(n<3)	return -1;						// No hay trazas de menos de tres uint8_ts.
 	if(n==3)								// 53 c4 fa / 53 54 fa	(ok/error)
 	{
 		if(n ==0)   Serial.println(F("NO TRAZA..."));  // Mostros traza que llega.
@@ -333,8 +323,8 @@ int		VerificaRecibido( unsigned char *trama, int n)
 		}
 		
 		if(  trama[2] != 0xfa)							return -2;		// Error en el recibido.
-		if( (trama[1]) == ((0x0f&ContEnvio[pos])|0x50) )		return -3;		// Error en el recibido.
-		if( (trama[1]) == ((0x0f&ContEnvio[pos])|0xc0) )		return 1;		// Recibido Ok.
+		if( (trama[1]) == ((0x0f&ContEnvio[surt][lado])|0x50) )		return -3;		// Error en el recibido.
+		if( (trama[1]) == ((0x0f&ContEnvio[surt][lado])|0xc0) )		return 1;		// Recibido Ok.
 		return -4;
 	}
 	
@@ -387,14 +377,14 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				Serial.println(F("     **** Venta ****"));
 				i+=2;
 				
-				// 4 bytes 00 00 04 28 -> 0.428
+				// 4 uint8_ts 00 00 04 28 -> 0.428
 				long  longTemp;
 				longTemp = 10*(0x0f&(trama[i]>>4)) + (0x0f&trama[i++]);	tempvolumen  = 1000000*longTemp;
 				longTemp = 10*(0x0f&(trama[i]>>4)) + (0x0f&trama[i++]);	tempvolumen += 10000*longTemp;
 				longTemp = 10*(0x0f&(trama[i]>>4)) + (0x0f&trama[i++]);	tempvolumen += 100*longTemp;
 				longTemp = 10*(0x0f&(trama[i]>>4)) + (0X0f&trama[i++]);	tempvolumen += longTemp;
 				
-				//	4 bytes 00 00 34 77 -> 3477
+				//	4 uint8_ts 00 00 34 77 -> 3477
 				longTemp = 10*(0x0f&(trama[i]>>4)) + (0x0f&trama[i++]);	tempventa  = 1000000*longTemp;
 				longTemp = 10*(0x0f&(trama[i]>>4)) + (0x0f&trama[i++]);	tempventa += 10000*longTemp;
 				longTemp = 10*(0x0f&(trama[i]>>4)) + (0x0f&trama[i++]);	tempventa += 100*longTemp;
@@ -440,7 +430,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				precioBDC[1] = trama[i+1];
 				precioBDC[2] = trama[i+2];
 				
-				temp_precio  = 100000*(0x0f&(trama[i]>>4)) + 10000*(0x0f&trama[i++]); 	                      //	4 bytes 00 81 23 -> 8123
+				temp_precio  = 100000*(0x0f&(trama[i]>>4)) + 10000*(0x0f&trama[i++]); 	                      //	4 uint8_ts 00 81 23 -> 8123
 				temp_precio +=		1000*(0x0f&(trama[i]>>4)) +   100*(0x0f&trama[i++]);
 				temp_precio +=		  10*(0x0f&(trama[i]>>4)) +       (0x0f&trama[i++]);
 				
@@ -456,7 +446,6 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				51 33 1 1 1 1 1 2 2B 8F 3 FA	*/
 		}
 		
-		byte index;
 		// ----------------------------------------------------------------------------------------------------
 		if(F_locales&F_ESTADO)
 		{
@@ -475,28 +464,20 @@ int		VerificaRecibido( unsigned char *trama, int n)
 		// ---------------------------------------------------------------------------
 		if(F_locales&F_TOTAL)
 		{
-			//index = 2*pos + total_mang -1;    // Para surtidores con 1 mangueras.
-			//index = 1*pos + total_mang -1;    // Para surtidores con 2 mangueras.
-			if((pos==0)||(pos==1)) index = 3*pos + total_mang -1;    // Para surtidores con 3 mangueras.
-			if(pos==2) index = 2;
-			if(pos==3) index = 5;
-			
 			Serial.print(F("Manguera: "));		Serial.print(total_mang);
 			
-			Serial.print(F(" ,3* "));			Serial.print(pos);    Serial.print(F(" + "));
-			Serial.print(total_mang);			Serial.println(F(" -1"));
-			
-			Serial.print(tmpnumeracion);
-			Serial.print(F(" - index: "));				Serial.println(index);
+			Serial.print(F(" ,lado: "));		Serial.print(lado);    Serial.print(F(" + "));
+			Serial.print(total_mang);			Serial.print(F(" | "));
+			Serial.print(tmpnumeracion);		Serial.print(F(" - surtidor: "));				Serial.println(surt);
 			
 			// datos de totales.
-			if(mang_status[pos]==0)
+			if(mang_status[surt][lado]==0)
 			{
-				if((venta[index].Numeracion - tmpnumeracion)!=0) Serial.println(F("NO COINCIDE NUMERACION"));
+				if((venta[surt][lado].Numeracion - tmpnumeracion)!=0) Serial.println(F("NO COINCIDE NUMERACION"));
 				
-				if(tmpnumeracion !=0) venta[index].Numeracion = tmpnumeracion;
+				if(tmpnumeracion !=0) venta[surt][lado].Numeracion = tmpnumeracion;
 				
-				F_globales[pos] |= F_TOTAL;
+				F_globales[surt][lado] |= F_TOTAL;
 				F_locales &= ~F_TOTAL;
 				
 				ret = total_mang;
@@ -504,35 +485,30 @@ int		VerificaRecibido( unsigned char *trama, int n)
 		}
 		
 		// ---------------------------------------------------------------------------
-		byte bytetemp=0;
+		uint8_t uint8_ttemp=0;
 		
-		Serial.print(F("12 ID: "));   Serial.print(ID, HEX);  Serial.print(F(", pos: "));  Serial.println(pos);
+		Serial.print(F("12 ID: "));   Serial.print(ID, HEX);  Serial.print(F(", lado: "));  Serial.println(lado);
 		if(F_locales&F_PRECIO)
 		{
-			//index = 2*pos + pre_mang -1;		// CONVERTIR EN VARIABLE DE SISTEMA.
-			//index = 1*pos + pre_mang -1;			// NO FUNCIONA EN FUSAGASUGA
-			if((pos==0)||(pos==1)) index = 3*pos + pre_mang -1;    // Para surtidores con 3 mangueras.
-			if(pos==2) index = 2;
-			if(pos==3) index = 5;
-			
 			Serial.print(F("F_PRECIO| "));
-			Serial.print(F("Manguera: "));      Serial.print(pre_mang);     
-			Serial.print(F(", Precio: "));		Serial.print(temp_precio);
-			Serial.print(F(", Est Ant: "));		Serial.print(mang_status[pos]);
-			Serial.print(F(", Estado: "));		Serial.print(precio_mang_status);
-			Serial.print(F(", index: "));		Serial.println(index);
+			Serial.print(F("Manguera  : "));		Serial.print(pre_mang);     
+			Serial.print(F(", Precio  : "));		Serial.print(temp_precio);
+			Serial.print(F(", Est Ant : "));		Serial.print(mang_status[surt][lado]);
+			Serial.print(F(", Estado  : "));		Serial.print(precio_mang_status);
+			Serial.print(F(", surtidor: "));		Serial.print(surt);
+			Serial.print(F(", lado    : "));		Serial.println(lado);
 			
 			if(temp_precio != 0)										// Si el precio en diferente de cero se actualiza.
 			{
-				UltManguera[pos] = pre_mang;
-				venta[index].PPU = temp_precio;
+				UltManguera[surt][lado] = pre_mang;
+				venta[surt][lado].PPU = temp_precio;
        
-				F_globales[pos] |= F_PRECIO;
+				F_globales[surt][lado] |= F_PRECIO;
 			}
 			//if(pre_mang != 0) 	venta[index].Manguera = pre_mang;
 			
 			// -------------------------
-			if( (mang_status[pos]==0)&&(precio_mang_status==1) )		// INICIO DE LA VENTA	***
+			if( (mang_status[surt][lado]==0)&&(precio_mang_status==1) )		// INICIO DE LA VENTA	***
 			{
 				//desautorizar(ID);
 				delay(DELAYWAYNE);
@@ -543,16 +519,16 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				//			AUTORIZACION
 				autorizar(ID, pre_mang, precioBDC);
 				
-				mang_status[pos]=1;
-				F_ventaOk[pos] = 0;
-				F_globales[pos] = 0;
+				mang_status[surt][lado]=1;
+				F_ventaOk[surt][lado] = 0;
+				F_globales[surt][lado] = 0;
 			}
 			
 			/*
 				Si esta manguera levantada y autorizacion 1 o 2, debe autorizar manguera nuevamente.
 			*/
 			// -------------------------
-			if( (mang_status[pos]==1)&&(precio_mang_status==0) )		// FINAL DE LA VENTA	***
+			if( (mang_status[surt][lado]==1)&&(precio_mang_status==0) )		// FINAL DE LA VENTA	***
 			{
 				Serial.println(F("FIN VENTA ******* 1"));
 				validarDatos=1;
@@ -560,10 +536,10 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				Serial.print(F("Manguera: "));  Serial.println(pre_mang);
 				
 				finalVenta=1;
-				F_globales[pos] = 0;
-				F_ventaOk[pos]=1;
+				F_globales[surt][lado] = 0;
+				F_ventaOk[surt][lado]=1;
 				
-				mang_status[pos]=0;
+				mang_status[surt][lado]=0;
 				getVenta(ID);                   // Solicita VENTA
 				//getTotales( ID, pre_mang );     // Solicita TOTALES.
 				return -1;
@@ -588,22 +564,23 @@ int		VerificaRecibido( unsigned char *trama, int n)
 		if((F_locales&F_VENTA)&&(validarDatos == 0))
 		{
 			Serial.print(F("F_VENTA | "));
-			Serial.print(F("Venta: "));    Serial.print(tempventa);
-			Serial.print(F(" ,Volumen: "));   Serial.print(((float)tempvolumen)/1000);
-			Serial.print(F(", index:"));   Serial.print(index);			Serial.print(F(" - "));   Serial.println(millis());
+			Serial.print(F("Venta: "));			Serial.print(tempventa);
+			Serial.print(F(" ,Volumen: "));		Serial.print(((float)tempvolumen)/1000);
+			Serial.print(F(", surtidor:"));		Serial.print(surt);	Serial.print(F(", lado:"));		Serial.print(lado);			
+			Serial.print(F(" - "));				Serial.println(millis());
 			
 			// @@@@@ aqui se debe revizar un posible error en los datos que se insertan en venta
 			if(precio_mang_status==0)	// actualiza venta solo si la manguera esta colgada. hay que mirar lo de los totales...
 			{
-				venta[index].Venta = tempventa;
-				venta[index].Volumen = ((double)tempvolumen)/1000;
+				venta[surt][lado].Venta = tempventa;
+				venta[surt][lado].Volumen = ((double)tempvolumen)/1000;
 				
 				if(finalVenta==1)
 				{
 					Serial.println(F("FIN VENTA ******* 2"));
 					//desautorizar(ID);
 					
-					//if(venta[index].Venta==0)
+					//if(venta[surt][lado].Venta==0)
 					if(tempventa==0)
 					{
 						Serial.println(F("VENTA EN CEROS *******"));
@@ -616,38 +593,39 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				}
 			}
 			
-			F_globales[pos] |= F_VENTA;
+			F_globales[surt][lado] |= F_VENTA;
 			F_locales &= ~F_VENTA;
 		}
 		
-		byte  puta = (byte)F_VENTA|F_PRECIO|F_TOTAL;
+		uint8_t  puta = (uint8_t)F_VENTA|F_PRECIO|F_TOTAL;
 		// ***************************************************************************
-		if( (F_ventaOk[pos]==1) && (F_globales[pos] == puta) )
+		if( (F_ventaOk[surt][lado]==1) && (F_globales[surt][lado] == puta) )
 		{
-			Serial.print(F("Index - "));			Serial.println(index);
 			// datos de la venta
-			Serial.print(F("VENTA NUEVA *************** pos: "));       Serial.println(pos);
-			Serial.print(F("Volumen: "));	Serial.println(venta[index].Volumen);
-			Serial.print(F("Venta  : "));	Serial.println(venta[index].Venta);
-			Serial.print(F("PPU    : "));	Serial.println(venta[index].PPU);
-			Serial.print(F("numeracion : "));	Serial.println(venta[index].Numeracion);
+			Serial.print(F("VENTA NUEVA *************** "));
+			Serial.print(F("Surtidor: "));			Serial.print(surt);
+			Serial.print(F(", lado: "));			Serial.println(lado);
+			Serial.print(F("Volumen: "));			Serial.println(venta[surt][lado].Volumen);
+			Serial.print(F("Venta  : "));			Serial.println(venta[surt][lado].Venta);
+			Serial.print(F("PPU    : "));			Serial.println(venta[surt][lado].PPU);
+			Serial.print(F("numeracion : "));		Serial.println(venta[surt][lado].Numeracion);
 			
-			long errorVenta = venta[index].Venta - (venta[index].Volumen*venta[index].PPU);
+			long errorVenta = venta[surt][lado].Venta - (venta[surt][lado].Volumen*venta[surt][lado].PPU);
 			Serial.print(F("error : "));	Serial.println(errorVenta);
 			
 			if(( errorVenta<-50)||(50<errorVenta))
 			{
-				mang_status[pos]=1;
+				mang_status[surt][lado]=1;
 				
-				F_ventaOk[pos] = 0;			// No se envia esta venta y se permite releer en el proximo ciclo.
-				F_globales[pos] = 0;
+				F_ventaOk[surt][lado] = 0;			// No se envia esta venta y se permite releer en el proximo ciclo.
+				F_globales[surt][lado] = 0;
 				
 				return -6;
 			}
 			
-			F_enviado[pos] = 0;
-			F_ventaOk[pos]= 0x10 + index;    // 0-7
-			Serial.print(F("Volumen 2: ")); Serial.println(venta[index].Volumen);
+			F_enviado[surt][lado] = 0;
+			F_ventaOk[surt][lado]= 0x10 + 2*surt + lado;    // 0-7 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+			Serial.print(F("Volumen 2: ")); Serial.println(venta[surt][lado].Volumen);
 			
 			return ret;
 		}
@@ -658,7 +636,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 /* ***************************************************************************************************
  *                              IMPLEMENTACION DE FUNCIONES MAYOR NIVEL                              *
  *****************************************************************************************************/
-int    getEstado(byte ID)         // Estado de cada cara del surtidor.
+int    getEstado(uint8_t ID)         // Estado de cada cara del surtidor.
 {
 	int res;
 	unsigned char trama[15];
@@ -674,7 +652,7 @@ int    getEstado(byte ID)         // Estado de cada cara del surtidor.
 }
 
 // ----------------------------------------------------------------------------------------------------
-int    getTotales(byte ID, byte manguera)
+int    getTotales(uint8_t ID, uint8_t manguera)
 {
 	//  Imp   50 32 | 65 1 1 | 23 3B | 3 FA
 	int res;
@@ -691,7 +669,7 @@ int    getTotales(byte ID, byte manguera)
 }
 
 // ----------------------------------------------------------------------------------------------------
-int getVenta( byte ID )   // Llenar una estructura con la informacion de la venta
+int getVenta( uint8_t ID )   // Llenar una estructura con la informacion de la venta
 {
 	//  51 3E 1 1 4 A1 B7 3 FA
 	int res;
@@ -708,7 +686,7 @@ int getVenta( byte ID )   // Llenar una estructura con la informacion de la vent
 }
 
 // ----------------------------------------------------------------------------------------------------
-int		autorizar(byte ID, byte manguera, byte *precioBDC)			// Por ahora solo autoriza a cualquier monto.
+int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precioBDC)			// Por ahora solo autoriza a cualquier monto.
 {
 	Serial.println(F("Autorizar Venta *******"));
 	Serial.print(F("ID   : "));	Serial.print(ID);	Serial.print(F(", mang : "));	Serial.println(manguera);
@@ -719,25 +697,31 @@ int		autorizar(byte ID, byte manguera, byte *precioBDC)			// Por ahora solo auto
 		return -1;
 	}
 
+	uint8_t	surtidor = i2cAutoriza.surtidor;
+	uint8_t	lado = i2cAutoriza.lado;
+	int		mang = i2cAutoriza.mang;
+	uint8_t	modo = i2cAutoriza.modo;
+	double	cantidad = i2cAutoriza.cantidad;
+
 	// probar si la manguera es la misma, sino, retorna.
 	Serial.println(F("--- i2cAutoriza ---"));
-	Serial.print(F("modo    : "));  Serial.println(i2cAutoriza.modo);
-	Serial.print(F("lado    : "));  Serial.println(i2cAutoriza.lado);
-	Serial.print(F("mang    : "));  Serial.println(i2cAutoriza.mang);
-	Serial.print(F("cantidad: "));  Serial.println(i2cAutoriza.cantidad);
+	Serial.print(F("modo    : "));  Serial.println(modo);
+	Serial.print(F("lado    : "));  Serial.println(lado);
+	Serial.print(F("mang    : "));  Serial.println(mang);
+	Serial.print(F("cantidad: "));  Serial.println(cantidad);
   
-	if((manguera-1) != i2cAutoriza.mang)
+	if((manguera-1) != mang)
 	{
 		Serial.println(F("*** Manguera DIFERENTE a la seleccionada ***"));
 		return -2;
 	}
 
 	Serial.println(F("--- verifica lado ---"));
-	Serial.print(F("ID1    : "));  Serial.println(IDs[i2cAutoriza.lado], HEX);
+	Serial.print(F("ID1    : "));  Serial.println(IDs[surtidor][lado], HEX);
 	Serial.print(F("ID2    : "));  Serial.println(ID, HEX);
 	Serial.println();
 	
-	if( IDs[i2cAutoriza.lado] != ID )
+	if( IDs[surtidor][lado] != ID )
 	{
 		Serial.println(F("*** Numero de lado o cara no corresponde a la autorizada ***"));
 		return -1;
@@ -778,7 +762,7 @@ int		autorizar(byte ID, byte manguera, byte *precioBDC)			// Por ahora solo auto
 	
 	// calcular el valor.
 	long ventaBin = i2cAutoriza.cantidad;
-	byte ventaBDC[8];
+	uint8_t ventaBDC[8];
 	
 	ventaBDC[0] = 0x0f&((ventaBin%100000000)/10000000);
 	ventaBDC[1] =  0x0f&((ventaBin%10000000)/1000000);
@@ -804,7 +788,7 @@ int		autorizar(byte ID, byte manguera, byte *precioBDC)			// Por ahora solo auto
 }
 
 // ----------------------------------------------------------------------------------------------------
-int		desautorizar(byte ID)
+int		desautorizar(uint8_t ID)
 {
 	//  51 3E | 1 1 8 | A1 B2 | 3 FA  : 51 CONT  1 1 8 CRC 3 FA
 	//  51 CE FA
@@ -823,7 +807,7 @@ int		desautorizar(byte ID)
 // en donde guardar los precios de wayne.
 unsigned int PPUs[12];
 
-int		setPrecio( byte ID, byte manguera, unsigned int PPU )		// mierda
+int		setPrecio( uint8_t ID, uint8_t manguera, unsigned int PPU )		// mierda
 {
 	Serial.print(F("ID: "));  Serial.print(ID, HEX);
 	Serial.print(F(", Mang: "));  Serial.print(manguera);
@@ -857,8 +841,8 @@ int		setPrecio( byte ID, byte manguera, unsigned int PPU )		// mierda
   
 	for(int i=1; i<=manguera; i++)
 	{
-		byte  precioBDC[6];
-		byte j =3*cara + i -1;
+		uint8_t  precioBDC[6];
+		uint8_t j =3*cara + i -1;
     
 		precioBDC[0] = 0x0f&((PPUs[j]%1000000)/100000);
 		precioBDC[1] =   0x0f&((PPUs[j]%100000)/10000);
@@ -867,7 +851,7 @@ int		setPrecio( byte ID, byte manguera, unsigned int PPU )		// mierda
 		precioBDC[4] =         0x0f&((PPUs[j]%100)/10);
 		precioBDC[5] =           0x0f&(PPUs[j]%10);
     
-		for(byte k=0; k<6; k++)
+		for(uint8_t k=0; k<6; k++)
 		{
 			Serial.print(precioBDC[k], HEX);      Serial.print(F(" "));
 		}      Serial.println(PPUs[j]);

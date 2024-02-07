@@ -1,41 +1,48 @@
 /* ***************************************************************************************************
  *                                               VENTAS                                              *
  *****************************************************************************************************/
-typedef struct                      // Dato que se acaba de leer desde el protocolo.
+typedef struct                      					// Dato que se acaba de leer desde el protocolo. 15Bytes.
 {
-	double			Volumen;        // 4
-	unsigned long	Venta;          // 4
-	unsigned int	PPU;            // 2
-	
-	unsigned long	Numeracion;     // 4
-}Venta;                             // 14
-Venta   venta[12];                   // 84
+	double			Volumen;
+	unsigned long	Venta;
+	unsigned int	PPU;
+	uint8_t	manguera;
+
+	unsigned long	Numeracion;
+}Venta;
+Venta   venta[3][2];                   					// 3 surtidores, 2 lados.
+
+unsigned long	numeracion[3][2][4];					// 3 surtidores, 2 lados, 4 mangueras. 96 bytes.
 
 /* ***************************************************************************************************
  *                                          COMUNICACION i2c                                         *
  *****************************************************************************************************/
 typedef struct
 {
-	byte funcion;
+	uint8_t funcion;
 	unsigned long time;
 } I2cFuncion;
 I2cFuncion	i2cFuncion;
 
 char  DatosI2C[20];
 
+int bytesTx;
+char txData[190];
+
 // ------------------------------------------------------------------------
-typedef struct    // 3 bytes
+typedef struct    // 3 uint8_ts
 {
-	byte manguera;
+	uint8_t manguera;
 	unsigned int PPU;
 } I2CPrecio;
 
 // ------------------------------------------------------------------------
 typedef struct
 {
-	byte lado;
+	uint8_t surtidor;
+	uint8_t lado;
 	int mang;
-	byte modo;
+	uint8_t modo;
 	double cantidad;
 } I2cAutoriza;
 I2cAutoriza   i2cAutoriza;
@@ -47,23 +54,22 @@ OneWire   ds1(2);			// Pin para iButton1
 OneWire   ds2(3);			// Pin para iButton2
 
 String    keyStatus="";
-byte      uso_iButton=0;
+uint8_t      uso_iButton=0;
 unsigned long iB_Tini;
 
 typedef struct
 {
 	char  id[18];
-	byte  lado;
+	uint8_t  lado;
 	int   Check;
 }Ibutton;
 
 /* ***************************************************************************************************
- *																									 *
+ *                                               CONFIG                                              *
  *****************************************************************************************************/
 typedef struct
 {
-	byte	Num_Caras = 2;
-	byte	Num_Mang_1 = 2;
-	byte	Num_Mang_2 = 0;
+	uint8_t	Num_Surt = 1;
+	uint8_t	Num_Mang = 2;
 }	Configuracion;
 Configuracion Conf;

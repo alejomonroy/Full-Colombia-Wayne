@@ -8,13 +8,13 @@ Llega el comando con sus respectivos datos de autorizacion:
 
 typedef struct
 {
-  byte lado;
+  uint8_t lado;
   int mang;
-  byte modo;
+  uint8_t modo;
   double cantidad;
 } I2cAutoriza;
 
 Ademas de cargar la informacion de autorizacion, este comando no ejecuta nada mas, y tiene solo efecto cuando se levanta una manguera.
-Dentro de la funcion: int		autorizar(byte ID, byte manguera, byte modo, long cantidad, byte *precioBDC)
+Dentro de la funcion: int		autorizar(uint8_t ID, uint8_t manguera, uint8_t modo, long cantidad, uint8_t *precioBDC)
 solo maneja un proceso de autorizacion al tiempo, lo que quiere decir que si llega una nueva autorizacion a la otra cara, esta reeemplaza la autorizacion anterior.
 
