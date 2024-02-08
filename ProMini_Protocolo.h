@@ -132,13 +132,13 @@ void LoopI2C_Comunicacion()
 		
 		for(int surt=0; surt<Conf.Num_Surt; surt++)
 		{
-			Serial.print(F("***** Surtidor: "));		Serial.println(surt);
+			Serial.print(F("***** Surtidor: "));		Serial.print(surt);
 
 			for(int lado=0; lado<2; lado++)
 			{
 				Serial.print(F("***** Lado: "));	Serial.print(lado);
 
-				for(int i=0; i<Conf.Num_Mang; i++)
+				for(int i=0; i<Conf.Num_Mang[surt]; i++)
 				{
 					Serial.print(F("***** Manguera: "));	Serial.print(i);		Serial.print(F("  ID:"));		Serial.println(IDs[surt][lado], HEX);
 
@@ -201,4 +201,3 @@ char *itostr( char *varstr, uint8_t vardato )
 	else      sprintf( varstr, "%d", vardato );
 	return varstr;
 }
-

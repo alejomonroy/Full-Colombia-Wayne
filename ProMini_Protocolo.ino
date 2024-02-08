@@ -206,7 +206,7 @@ void getKeyCode(OneWire   ds, uint8_t *addr)   // Leer codigo iButton
 // ------------------
 void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 {
-	Serial.print(  F("I2C. howMany: ") );	Serial.println( howMany );
+	Serial.print(  F("Recibe_I2C(). howMany: ") );	Serial.println( howMany );
 	char		strI2C[100];		// Datos. cada vez que van llegando datos se van guardando. debe ser GLOBAL.
 	volatile	uint8_t  varI = 0;
 
@@ -237,7 +237,7 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 	strncpy( DatosI2C, ptr, 19 );		//Serial.print( F("I2C. datos: ") );		Serial.println( DatosI2C );
 	
 	// Verificar que el primero si sea "innpetrol"
-	Serial.print( F("I2C. Comando: ") );   Serial.print(REQcomand);
+	Serial.print( F("I2C. Comando: ") );   Serial.println(REQcomand);
 	
 	// __________________________________________________
 	if( strcmp_P( REQcomand, (PGM_P)F("ventas") )==0 )						// *** SE LLENA LA ESTRUCTURA Y SE TIENE LISTA PARA ENVIAR LOS DATOS SOLICITADOS ***
@@ -287,7 +287,7 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 			if( chari2c<16 )  sprintf( txData, "%s0%x", txData, chari2c );
 			else        sprintf( txData,  "%s%x", txData, chari2c );
 		}
-		Serial.println(txData);												// estructura que contiene la informacion a enviar. 182 uint8_ts (2020-02-02).*/
+		Serial.print(strlen(txData));		Serial.print(F(": "));		Serial.println(txData);		// estructura que contiene la informacion a enviar. 182 uint8_ts (2020-02-02).*/
 
 		bytesWrite = 0;														// inicia envio de datos desde la posicion 0 del arreglo.
 	}
@@ -382,32 +382,34 @@ uint8_t	strcmpEDS(char *str1, char *str2, int	noChar)							// Retorna 0, o otro
 void Request_I2C()
 {
 	int bytesReq = Wire.available();
-	Serial.print(F("Request: "));	Serial.print(bytesReq);		Serial.print(F(" - "));	Serial.println(i2cFuncion.time-millis());
+	Serial.print(F("Request_I2C(): "));	Serial.print(bytesReq);		Serial.print(F(" - "));	Serial.println(i2cFuncion.time-millis());
 
-	if((i2cFuncion.funcion == VENTAS)||(millis() < i2cFuncion.time))
+	if((i2cFuncion.funcion == VENTAS)&&(millis() < i2cFuncion.time))
 	{
+		Serial.print(F("VENTAS: "));		Serial.println(bytesWrite);
 		char  bufI2C[33];
 		bzero(bufI2C, sizeof(bufI2C));
 
 		strncpy(bufI2C, &txData[bytesWrite], bytesReq);
 		Serial.println(bufI2C);
 		
-		Wire.write(bufI2C);
+		bytesWrite += Wire.write(bufI2C);
 		delay(15);
 	}
 
-	if((i2cFuncion.funcion == ESTADO_M)||(millis() < i2cFuncion.time))
+	if((i2cFuncion.funcion == ESTADO_M)&&(millis() < i2cFuncion.time))
 		enviarEstado();
 
-	if((i2cFuncion.funcion == SEND_NUM)||(millis() < i2cFuncion.time))
+	if((i2cFuncion.funcion == SEND_NUM)&&(millis() < i2cFuncion.time))
 	{
+		Serial.print(F("SEND_NUM: "));		Serial.println(bytesWrite);
 		char  bufI2C[33];
 		bzero(bufI2C, sizeof(bufI2C));
 
 		strncpy(bufI2C, &txData[bytesWrite], bytesReq);
 		Serial.println(bufI2C);
 		
-		Wire.write(bufI2C);
+		bytesWrite += Wire.write(bufI2C);
 		delay(15);
 	}
 }
@@ -415,7 +417,7 @@ void Request_I2C()
 // -----------------------------------------------------------------------------------------------------
 uint8_t  enviarEstado()
 {
-	Serial.println(F("INICIA ESTADO MANGUERAS..."));
+	Serial.println(F("enviarEstado(): "));
 	Serial.print(F("S1, L1: "));		Serial.println(mang_status[0][0]);
 	Serial.print(F("S1, L2: "));		Serial.println(mang_status[0][1]);
 	Serial.print(F("S2, L1: "));		Serial.println(mang_status[1][0]);
@@ -463,37 +465,8 @@ uint8_t  enviarEstado()
 
 uint8_t  enviarNumeracion()
 {
-	char			strI2C[190];							// Datos. cada vez que van llegando datos se van guardando. debe ser GLOBAL.
-
-	/*for(int j=0; j<(2*Conf.Num_Surt); j++)			// Cada cara.
-	{
-		uint8_t Num_Mang = 0;
-		if((j==0)||(j==2)) Num_Mang= Conf.Num_Mang_1;
-		if((j==1)||(j==3)) Num_Mang= Conf.Num_Mang_2;
-		
-		for(int i=1; i<=Num_Mang; i++)				// Cada manguera. (1, 2, 3)
-		{
-			Serial.print(F("numeracion: "));	Serial.println(venta[index].Numeracion);
-			int index = j*3 + i;
-			numeracion[index] = venta[index].Numeracion;
-		}
-	}*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  Serial.print(F("enviarNumeracion(): "));
+  char			strI2C[190];							// Datos. cada vez que van llegando datos se van guardando. debe ser GLOBAL.
 
 	// Enviar al PRINCIPAL los volumenes para el turno CIERRE/APERTURA.
 	strcpy( strI2C, F("innpe:1:numeracion:") );		// "innpe:1:numeracion:"

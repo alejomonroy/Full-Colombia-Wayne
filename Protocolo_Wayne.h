@@ -239,7 +239,7 @@ int		EnviarTrama2( uint8_t ID, unsigned char *trama, int n )		// Con confirmacio
 		if(res>=3)			// No se recibio nada.
 		{
 			ContEnvio[surt][lado]++;
-			if(ContEnvio[lado]>0x3f) ContEnvio[surt][lado] = 0x31;
+			if(ContEnvio[surt][lado]>0x3f) ContEnvio[surt][lado] = 0x31;
 			if( (trama2[1]&0xf0) == 0xc0 ) return 1;    // Recibido Ok.
 			if( (trama2[1]&0xf0) == 0x50 ) ContEnvio[surt][lado] = 0x30;    // Reiniciar el contador de envio en tarjeta FULL y en wayne.
 		}
