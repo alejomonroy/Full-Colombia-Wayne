@@ -294,8 +294,23 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 	// __________________________________________________
 	if( strcmp_P( REQcomand, (PGM_P)F("estado") )==0 )		// REQUEST.
 	{
+		Serial.println(F("Estado de mangueras"));
+
 		i2cFuncion.funcion = ESTADO_M;
-		i2cFuncion.time = millis() + 100;
+		i2cFuncion.time = millis() + 200;
+
+		txData[0] = 0;														// Los datos binarios los transforma en formato hexagesimal.
+		char  *tmpstr1;
+		tmpstr1 = (char*)(&mang_status);
+		for(int i=0; i<sizeof(mang_status); i++)
+		{
+			int chari2c = 0xff&tmpstr1[i];
+			if( chari2c<16 )  sprintf( txData, "%s0%x", txData, chari2c );
+			else        sprintf( txData,  "%s%x", txData, chari2c );
+		}
+		Serial.print(strlen(txData));		Serial.print(F(": "));		Serial.println(txData);		// estructura que contiene la informacion a enviar. 182 uint8_ts (2020-02-02).*/
+
+		bytesWrite = 0;														// inicia envio de datos desde la posicion 0 del arreglo.
 	}
 	
 	// __________________________________________________
@@ -396,7 +411,16 @@ void Request_I2C()
 	}
 
 	if((i2cFuncion.funcion == ESTADO_M)&&(millis() < i2cFuncion.time))
-		enviarEstado();
+  {
+		Serial.print(F("ESTADO_M: "));		Serial.println(bytesWrite);
+		char  bufI2C[33];
+		bzero(bufI2C, sizeof(bufI2C));
+
+		strncpy(bufI2C, &txData[bytesWrite], bytesReq);
+		Serial.println(bufI2C);
+		
+		bytesWrite += Wire.write(bufI2C);
+  }
 
 	if((i2cFuncion.funcion == SEND_NUM)&&(millis() < i2cFuncion.time))
 	{
@@ -409,51 +433,4 @@ void Request_I2C()
 		
 		bytesWrite += Wire.write(bufI2C);
 	}
-}
-
-// -----------------------------------------------------------------------------------------------------
-uint8_t  enviarEstado()
-{
-	Serial.println(F("enviarEstado(): "));
-	Serial.print(F("S1, L1: "));		Serial.println(mang_status[0][0]);
-	Serial.print(F("S1, L2: "));		Serial.println(mang_status[0][1]);
-	Serial.print(F("S2, L1: "));		Serial.println(mang_status[1][0]);
-	Serial.print(F("S2, L2: "));		Serial.println(mang_status[1][1]);
-	Serial.print(F("S3, L1: "));		Serial.println(mang_status[2][0]);
-	Serial.print(F("S3, L2: "));		Serial.println(mang_status[2][1]);
-	
-  mang_status
-
-
-	char  strTemp[25];
-	if( (strcmp(DatosI2C,"ladoA")==0)&&((mang_status[0]==1)||(mang_status[1]==1)) )                        // el estatus debe ser cero para OK.
-		strcpy( strTemp, F("innpe:1:estado:error") );
-	else
-	{
-		if( (strcmp(DatosI2C,"ladoB")==0)&&((mang_status[2]==1)||(mang_status[3]==1)) )                        // el estatus debe ser cero para OK.
-			strcpy( strTemp, F("innpe:1:estado:error") );
-		else
-		{
-			if(strcmp(DatosI2C,"ambos")==0)
-			{
-				Serial.println(F("ambos caras..."));
-				if((mang_status[0]==1)||
-					(mang_status[1]==1)||
-					(mang_status[2]==1)||
-					(mang_status[3]==1)
-					)   // el estatus debe ser cero para OK.
-					strcpy( strTemp, F("innpe:1:estado:error") );
-				else
-					strcpy( strTemp, F("innpe:1:estado:oK") );
-			}
-			else
-			{
-				strcpy( strTemp, F("innpe:1:estado:oK") );
-			}
-		}
-	}
-	
-	Serial.println(strTemp);
-	Wire.write( strTemp );
-	i2cFuncion.funcion = 0;
 }
