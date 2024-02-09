@@ -250,7 +250,7 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 		tmpstr1 = (char*)(&venta);
 		for(int i=0; i<sizeof(venta); i++)
 		{
-			char chari2c = tmpstr1[i];
+			int chari2c = 0xff&tmpstr1[i];
 			
 			if( chari2c<16 )  sprintf( txData, "%s0%x", txData, chari2c );
 			else        sprintf( txData,  "%s%x", txData, chari2c );
@@ -282,8 +282,7 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 		tmpstr1 = (char*)(&numeracion);
 		for(int i=0; i<sizeof(numeracion); i++)
 		{
-			char chari2c = tmpstr1[i];
-			
+			int chari2c = 0xff&tmpstr1[i];
 			if( chari2c<16 )  sprintf( txData, "%s0%x", txData, chari2c );
 			else        sprintf( txData,  "%s%x", txData, chari2c );
 		}
@@ -381,7 +380,7 @@ uint8_t	strcmpEDS(char *str1, char *str2, int	noChar)							// Retorna 0, o otro
 // -----------------------------------------------------------------------------------------------------
 void Request_I2C()
 {
-	int bytesReq = Wire.available();
+	int bytesReq = min(32, strlen(txData) - bytesWrite);
 	Serial.print(F("Request_I2C(): "));	Serial.print(bytesReq);		Serial.print(F(" - "));	Serial.println(i2cFuncion.time-millis());
 
 	if((i2cFuncion.funcion == VENTAS)&&(millis() < i2cFuncion.time))
@@ -394,7 +393,6 @@ void Request_I2C()
 		Serial.println(bufI2C);
 		
 		bytesWrite += Wire.write(bufI2C);
-		delay(15);
 	}
 
 	if((i2cFuncion.funcion == ESTADO_M)&&(millis() < i2cFuncion.time))
@@ -410,7 +408,6 @@ void Request_I2C()
 		Serial.println(bufI2C);
 		
 		bytesWrite += Wire.write(bufI2C);
-		delay(15);
 	}
 }
 
@@ -425,6 +422,9 @@ uint8_t  enviarEstado()
 	Serial.print(F("S3, L1: "));		Serial.println(mang_status[2][0]);
 	Serial.print(F("S3, L2: "));		Serial.println(mang_status[2][1]);
 	
+  mang_status
+
+
 	char  strTemp[25];
 	if( (strcmp(DatosI2C,"ladoA")==0)&&((mang_status[0]==1)||(mang_status[1]==1)) )                        // el estatus debe ser cero para OK.
 		strcpy( strTemp, F("innpe:1:estado:error") );
@@ -454,50 +454,6 @@ uint8_t  enviarEstado()
 	}
 	
 	Serial.println(strTemp);
-	
 	Wire.write( strTemp );
-	delay(7);		// Este delay se debe a que se eliminaron los bloqueos en la libreria twi.
-	Wire.write( "END" );
-	
-	Serial.println(F("FIN ESTADO MANGUERAS..."));
 	i2cFuncion.funcion = 0;
-}
-
-uint8_t  enviarNumeracion()
-{
-  Serial.print(F("enviarNumeracion(): "));
-  char			strI2C[190];							// Datos. cada vez que van llegando datos se van guardando. debe ser GLOBAL.
-
-	// Enviar al PRINCIPAL los volumenes para el turno CIERRE/APERTURA.
-	strcpy( strI2C, F("innpe:1:numeracion:") );		// "innpe:1:numeracion:"
-	
-	// -------------------------
-	char  *tmpstr1;
-	tmpstr1 = (char*)(&numeracion);
-	for(int i=0; i<sizeof(numeracion); i++)
-	{
-		char chari2c = tmpstr1[i];
-		
-		if( chari2c<16 )  sprintf( strI2C, "%s0%x", strI2C, chari2c );
-		else        sprintf( strI2C,  "%s%x", strI2C, chari2c );
-	}
-	Serial.println(strI2C);		// estructura que contiene la informacion a enviar.
-	
-	int i=0;
-	int intTemp = strlen(strI2C);
-	char  bufI2C[55];
-	while( 32*i< intTemp )
-	{
-		bzero(bufI2C, sizeof(bufI2C));
-	
-		strncpy(bufI2C, &strI2C[i*32], 32);
-		Serial.println(bufI2C);
-		
-		Wire.write(bufI2C);
-		i++;
-	}
-	
-	// --------------------------------------------------
-	Serial.println( F("Enviada traza I2C") );
-	Wire.write("END");
 }

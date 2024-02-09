@@ -31,7 +31,7 @@ void print_infoVenta( uint8_t surtidor, uint8_t lado )		// muestra la ultima ven
 }
 
 // -----------------------------------------------------------------
-void  bzero(char *str, int tam){	for(int i=0; i<tam; i++) str[i]=0;	}
+void  bzero(char *str, int tam){	memset(str, 0, tam);	}
 
 // -----------------------------------------------------------------
 char char2int(char input)

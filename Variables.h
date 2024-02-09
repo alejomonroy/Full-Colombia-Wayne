@@ -13,6 +13,7 @@ typedef struct                      					// Dato que se acaba de leer desde el p
 Venta   venta[3][2];                   					// 3 surtidores, 2 lados.
 
 unsigned long	numeracion[3][2][4];					// 3 surtidores, 2 lados, 4 mangueras. 96 bytes.
+uint8_t			mang_status[3][2] = { {0,0}, {0 ,0}, {0 ,0} };				// por CARA.
 
 /* ***************************************************************************************************
  *                                          COMUNICACION i2c                                         *
@@ -27,7 +28,7 @@ I2cFuncion	i2cFuncion;
 char  DatosI2C[20];
 
 int		bytesWrite=0;
-char	txData[190];
+char	txData[200];
 
 // ------------------------------------------------------------------------
 typedef struct    // 3 uint8_ts
