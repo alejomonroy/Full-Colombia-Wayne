@@ -470,7 +470,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			Serial.print(tmpnumeracion);		Serial.print(F(" - surtidor: "));				Serial.println(surt);
 			
 			// datos de totales.
-			if(mang_status[surt][lado]==0)
+			if(mang_status[surt][lado]==IDLE1)
 			{
 				if((venta[surt][lado].Numeracion - tmpnumeracion)!=0) Serial.println(F("NO COINCIDE NUMERACION"));
 				
@@ -507,7 +507,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			//if(pre_mang != 0) 	venta[index].Manguera = pre_mang;
 			
 			// -------------------------
-			if( (mang_status[surt][lado]==0)&&(precio_mang_status==1) )		// INICIO DE LA VENTA	***
+			if( (mang_status[surt][lado]==READY)&&(precio_mang_status==1) )		// INICIO DE LA VENTA	***
 			{
 				//desautorizar(ID);
 				delay(DELAYWAYNE);
@@ -518,7 +518,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				//			AUTORIZACION
 				autorizar(ID, pre_mang, precioBDC);
 				
-				mang_status[surt][lado]=1;
+				mang_status[surt][lado]= WORK;
 				F_ventaOk[surt][lado] = 0;
 				F_globales[surt][lado] = 0;
 			}
@@ -527,7 +527,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				Si esta manguera levantada y autorizacion 1 o 2, debe autorizar manguera nuevamente.
 			*/
 			// -------------------------
-			if( (mang_status[surt][lado]==1)&&(precio_mang_status==0) )		// FINAL DE LA VENTA	***
+			if( (mang_status[surt][lado]== WORK)&&(precio_mang_status==0) )		// FINAL DE LA VENTA	***
 			{
 				Serial.println(F("FIN VENTA ******* 1"));
 				validarDatos=1;
@@ -538,7 +538,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				F_globales[surt][lado] = 0;
 				F_ventaOk[surt][lado]=1;
 				
-				mang_status[surt][lado]=0;
+				mang_status[surt][lado]=IDLE1;
 				getVenta(ID);                   // Solicita VENTA
 				//getTotales( ID, pre_mang );     // Solicita TOTALES.
 				return -1;

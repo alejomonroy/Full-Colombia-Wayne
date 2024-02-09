@@ -364,6 +364,8 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 		Serial.print(F("lado    : "));  Serial.println(i2cAutoriza.lado);
 		Serial.print(F("mang    : "));  Serial.println(i2cAutoriza.mang);
 		Serial.print(F("cantidad: "));  Serial.println(i2cAutoriza.cantidad);
+
+		mang_status[i2cAutoriza.surtidor][i2cAutoriza.lado] = READY;
 	} // */
 	
 	//--------------------------------------------------
