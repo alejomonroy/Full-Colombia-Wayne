@@ -36,9 +36,9 @@ int		setPrecio( uint8_t ID, uint8_t manguera, unsigned int PPU );		// Para despu
 /* ***************************************************************************************************
  *																									 *
  *****************************************************************************************************/
-SoftwareSerial SerialIgem(4, 7);    // RX, TX
+SoftwareSerial SerialIgem(4, 7);	// RX, TX
 
-unsigned int PPUArray[3][2]={0, 0, 0, 0, 0, 0};    // 12 uint8_ts
+unsigned int PPUArray[3][2][4];		//  48 bytes. [Surtidor][lado][manguera]
 
 /* ***************************************************************************************************
  *                                            VARIABLES                                              *
@@ -518,7 +518,6 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				//			AUTORIZACION
 				autorizar(ID, pre_mang, precioBDC);
 				
-				mang_status[surt][lado]= WORK;
 				F_ventaOk[surt][lado] = 0;
 				F_globales[surt][lado] = 0;
 			}
@@ -689,15 +688,17 @@ int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precioBDC)			// Por ahora 
 {
 	Serial.println(F("Autorizar Venta *******"));
 	Serial.print(F("ID   : "));	Serial.print(ID);	Serial.print(F(", mang : "));	Serial.println(manguera);
+ 
+  uint8_t surtidor = i2cAutoriza.surtidor;
+  uint8_t lado = i2cAutoriza.lado;
 	
-	if((i2cFuncion.funcion != AUTORIZAR)||(millis() > i2cFuncion.time))
+	if((funAuth[surtidor][lado].funcion != AUTORIZAR)||(millis() > funAuth[surtidor][lado].time))
 	{
+    funAuth[surtidor][lado].funcion =0;
 		Serial.println(F("*** No hay AUTORIZACION ***"));
 		return -1;
 	}
 
-	uint8_t	surtidor = i2cAutoriza.surtidor;
-	uint8_t	lado = i2cAutoriza.lado;
 	int		mang = i2cAutoriza.mang;
 	uint8_t	modo = i2cAutoriza.modo;
 	double	cantidad = i2cAutoriza.cantidad;
@@ -711,6 +712,7 @@ int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precioBDC)			// Por ahora 
   
 	if((manguera-1) != mang)
 	{
+    funAuth[surtidor][lado].funcion =0;
 		Serial.println(F("*** Manguera DIFERENTE a la seleccionada ***"));
 		return -2;
 	}
@@ -722,7 +724,8 @@ int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precioBDC)			// Por ahora 
 	
 	if( IDs[surtidor][lado] != ID )
 	{
-		Serial.println(F("*** Numero de lado o cara no corresponde a la autorizada ***"));
+    funAuth[surtidor][lado].funcion =0;
+    Serial.println(F("*** Numero de lado o cara no corresponde a la autorizada ***"));
 		return -1;
 	}
   
@@ -782,7 +785,9 @@ int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precioBDC)			// Por ahora 
 	trama[3] = 0x01;
 	trama[4] = 0x06;
 	EnviarTrama2(ID, trama, 3);        // 51 36 1 1 6 22 16 3 fa
-
+  
+  mang_status[surtidor][lado]= WORK;
+  funAuth[surtidor][lado].funcion=0;
 	return 0;
 }
 

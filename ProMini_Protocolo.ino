@@ -323,7 +323,7 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 		I2CPrecio i2cPrecio;
 		int size = sizeof(i2cPrecio);
 		char  *tmpstr = (char*)(&i2cPrecio);
-    
+
 		for(int i=0; i<size; i++)
 		{
 			char chari2c = (char2int( DatosI2C[2*i] )<<4) | char2int( DatosI2C[2*i+1] );
@@ -332,18 +332,24 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 		} Serial.println();
 
 	    // poner en cola de ejecucion.
-//		PPUArray[i2cPrecio.manguera] = i2cPrecio.PPU;@@@@@@@@
-		Serial.print(F("Manguera: "));                Serial.println(i2cPrecio.manguera);
-		Serial.print(F("PPU     : "));                Serial.println(i2cPrecio.PPU);
+		uint8_t		surt = i2cPrecio.surtidor;
+		uint8_t		lado = i2cPrecio.lado;
+		uint8_t		mang = i2cPrecio.manguera;
+
+		PPUArray[surt][lado][mang] = i2cPrecio.PPU;
+
+		Serial.print(F("Surtidor: "));		Serial.println(i2cPrecio.surtidor);
+		Serial.print(F("Lado: "));			Serial.println(i2cPrecio.lado);
+		Serial.print(F("Manguera: "));		Serial.println(i2cPrecio.manguera);
+		Serial.print(F("PPU     : "));		Serial.println(i2cPrecio.PPU);
 	} // */
 	
 	// __________________________________________________
 	if( strcmp( REQcomand, "aut" )==0 )
 	{
 		Serial.println(F("ORDEN VALORES DE AUTORIZACION..."));
-
-		i2cFuncion.funcion = AUTORIZAR;
-		i2cFuncion.time = millis() + 30000;		// La vigencia de la autorizacion no es mas de 30 segundos.
+//		i2cFuncion.funcion = AUTORIZAR;
+//		i2cFuncion.time = millis() + 30000;		// La vigencia de la autorizacion no es mas de 30 segundos.
     
 		int size = sizeof(i2cAutoriza);
 		char  *tmpstr = (char*)(&i2cAutoriza);
@@ -359,13 +365,17 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 			i2cAutoriza.cantidad = i2cAutoriza.cantidad*1000;				// en modo de volumen.
 
 		// poner en cola de ejecucion.
+		int surt = i2cAutoriza.surtidor;
+		int lado = i2cAutoriza.lado;
 		Serial.print(F("modo    : "));  Serial.println(i2cAutoriza.modo);
-		Serial.print(F("Surtidor: "));  Serial.println(i2cAutoriza.surtidor);
-		Serial.print(F("lado    : "));  Serial.println(i2cAutoriza.lado);
+		Serial.print(F("Surtidor: "));  Serial.println(surt);
+		Serial.print(F("lado    : "));  Serial.println(lado);
 		Serial.print(F("mang    : "));  Serial.println(i2cAutoriza.mang);
 		Serial.print(F("cantidad: "));  Serial.println(i2cAutoriza.cantidad);
 
-		mang_status[i2cAutoriza.surtidor][i2cAutoriza.lado] = READY;
+		funAuth[surt][lado].funcion = AUTORIZAR;
+		funAuth[surt][lado].time = millis() + 30000;    // La vigencia de la autorizacion no es mas de 30 segundos.
+		mang_status[surt][lado] = READY;
 	} // */
 	
 	//--------------------------------------------------

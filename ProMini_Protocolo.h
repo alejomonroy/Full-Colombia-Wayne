@@ -178,14 +178,17 @@ void LoopI2C_Comunicacion()
 		{
 			for(int lado=0; lado<2; lado++)
 			{
-				/*if(PPUArray[i]!=0)
+				for(int mang=0; mang<4; mang++)
 				{
-					Serial.print(F("i  : "));        Serial.println(i);
-					//Serial.print(F("PPU:"));         Serial.println(PPUArray[i]);@@@@@@@@
-					//setPrecio(IDs[surt][lado], 1, PPUArray[i]);
-
-					//PPUArray[i]=0;@@@@@@@@
-				}*/
+					if(PPUArray[surt][lado][mang]!=0)
+					{
+						Serial.print(F("mang  : "));        Serial.println(mang);
+						Serial.print(F("PPU   :"));         Serial.println(PPUArray[surt][lado][mang]);
+						setPrecio(IDs[surt][lado], 1, PPUArray[surt][lado][mang]);
+			
+						PPUArray[surt][lado][mang]=0;
+					}
+				}
 			}
 		}
 		

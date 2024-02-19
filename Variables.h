@@ -20,10 +20,12 @@ uint8_t			mang_status[3][2] = { {0,0}, {0 ,0}, {0 ,0} };				// por CARA.
  *****************************************************************************************************/
 typedef struct
 {
-	uint8_t funcion;
-	unsigned long time;
+  uint8_t funcion =0;
+  unsigned long time =0;
 } I2cFuncion;
-I2cFuncion	i2cFuncion;
+I2cFuncion  i2cFuncion;
+
+I2cFuncion  funAuth[3][2];    // 3 surtidores, 2 caras.
 
 char  DatosI2C[20];
 
@@ -33,6 +35,8 @@ char	txData[200];
 // ------------------------------------------------------------------------
 typedef struct    // 3 uint8_ts
 {
+	uint8_t surtidor;
+	uint8_t lado;
 	uint8_t manguera;
 	unsigned int PPU;
 } I2CPrecio;
