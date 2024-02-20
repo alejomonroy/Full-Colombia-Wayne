@@ -31,7 +31,7 @@ int		desautorizar(uint8_t ID);										// oK
 int		getVenta( uint8_t ID );										// oK
 int		getEstado(uint8_t ID);											// oK
 
-int		setPrecio( uint8_t ID, uint8_t manguera, unsigned int PPU );		// Para despues.
+int		setPrecio( uint8_t ID, uint8_t surt, uint8_t lado, uint8_t manguera, unsigned int PPU );
 
 /* ***************************************************************************************************
  *																									 *
@@ -809,71 +809,54 @@ int		desautorizar(uint8_t ID)
 
 // ----------------------------------------------------------------------------------------------------
 // en donde guardar los precios de wayne.
-unsigned int PPUs[12];
+uint16_t PPUs[3][2][4];		// 24
 
-int		setPrecio( uint8_t ID, uint8_t manguera, unsigned int PPU )		// mierda
+int		setPrecio( uint8_t ID, uint8_t surt, uint8_t lado, uint8_t manguera, unsigned int PPU_ )		// mierda
 {
-	Serial.print(F("ID: "));  Serial.print(ID, HEX);
-	Serial.print(F(", Mang: "));  Serial.print(manguera);
-	Serial.print(F(", precio: "));  Serial.println(PPU);
+	Serial.print(F("ID: "));  Serial.print(ID, HEX);	Serial.print(F(", Mang: "));  Serial.print(manguera);	Serial.print(F(", precio: "));  Serial.println(PPU_);
 	// 51 3F 5 3 0 81 23 A8 7 3 FA						Una manguera
 	// 52 3C 5 9 0 12 34  0 56 78 0 26 53 A9 46 3 FA	Tres mangueras
 	unsigned char trama[21];
-	unsigned int crc;
-
 	for(int i=0; i<sizeof(trama); i++) trama[i]=0;
+
 	trama[2] = 0x05;
-  
-	if(manguera==1) trama[3] = 0x03   ;// si manguera es 1.
-	if(manguera==2) trama[3] = 0x06   ;// si manguera es 2.
-	if(manguera==3) trama[3] = 0x09   ;// si manguera es 3.
-  
-	int cara=-1;
-	if(ID==IDs[0])  cara=0;
-	if(ID==IDs[1])  cara=1;
-	if(ID==IDs[2])  cara=2;
-	if(ID==IDs[3])  cara=3;
-  
-	if(cara==-1) return -1;
-  
-	PPUs[3*cara + manguera -1] = PPU;  // almacenar el precio que se quiere cambiar.
-  // guardar esta informacion en la E2PROM.
-  
-	Serial.print(F("i: "));    Serial.print( cara );
-	Serial.print(F(", manguera: "));    Serial.print( manguera );
-	Serial.print(F(", i PPUs: "));    Serial.println(cara*3 + manguera -1);
-  
-	for(int i=1; i<=manguera; i++)
-	{
-		uint8_t  precioBDC[6];
-		uint8_t j =3*cara + i -1;
+	if(manguera==0) trama[3] = 0x03   ;// si manguera es 1.
+	if(manguera==1) trama[3] = 0x06   ;// si manguera es 2.
+	if(manguera==2) trama[3] = 0x09   ;// si manguera es 3.
+	
+	PPUs[surt][lado][manguera] = PPU_;  // almacenar el precio que se quiere cambiar.
+	
+	Serial.print(F("surt: "));    		Serial.print( surt );		Serial.print(F(", lado: "));    Serial.print( lado );
+	Serial.print(F(", manguera: "));	Serial.print( manguera );	Serial.print(F(", PPUs: "));    Serial.println(PPU_);
+	
+	for(int i=1; i<=manguera+1; i++) {
+		uint8_t		precioBDC[6];
+		uint16_t	PPU = PPUs[surt][lado][i-1];
+
+		precioBDC[0] = 0x0f&( (PPU%1000000) /100000);
+		precioBDC[1] =   0x0f&( (PPU%100000) /10000);
+		precioBDC[2] =     0x0f&( (PPU%10000) /1000);
+		precioBDC[3] =       0x0f&( (PPU%1000) /100);
+		precioBDC[4] =         0x0f&( (PPU%100) /10);
+		precioBDC[5] =           0x0f&( PPU%10 );
     
-		precioBDC[0] = 0x0f&((PPUs[j]%1000000)/100000);
-		precioBDC[1] =   0x0f&((PPUs[j]%100000)/10000);
-		precioBDC[2] =     0x0f&((PPUs[j]%10000)/1000);
-		precioBDC[3] =       0x0f&((PPUs[j]%1000)/100);
-		precioBDC[4] =         0x0f&((PPUs[j]%100)/10);
-		precioBDC[5] =           0x0f&(PPUs[j]%10);
-    
-		for(uint8_t k=0; k<6; k++)
-		{
+		for(uint8_t k=0; k<6; k++) {
 			Serial.print(precioBDC[k], HEX);      Serial.print(F(" "));
-		}      Serial.println(PPUs[j]);
+		}      Serial.println(PPU);
     
 		trama[3*i+1] = (0xf0&(precioBDC[0]<<4)) | (0x0f&precioBDC[1]); // MSB
 		trama[3*i+2] = (0xf0&(precioBDC[2]<<4)) | (0x0f&precioBDC[3]);
 		trama[3*i+3] = (0xf0&(precioBDC[4]<<4)) | (0x0f&precioBDC[5]); // LSB
-    
 	}
   
-	if(manguera==1) EnviarTrama2(ID, trama, 5);     // si manguera es 1.
-	if(manguera==2) EnviarTrama2(ID, trama, 8);     // si manguera es 2.
-	if(manguera==3) EnviarTrama2(ID, trama, 11);    // si manguera es 3.  */
+	if(manguera==0) EnviarTrama2(ID, trama, 5);     // si manguera es 1.
+	if(manguera==1) EnviarTrama2(ID, trama, 8);     // si manguera es 2.
+	if(manguera==2) EnviarTrama2(ID, trama, 11);    // si manguera es 3.  */
 	delay(DELAYWAYNE);
-  
+	
 	trama[2] = 0x02;
 	trama[3] = 0x01;
-	trama[4] = manguera;
+	trama[4] = manguera+1;
 	EnviarTrama2(ID, trama, 3);        // 51 32 2 1 1 92 E4 3 fa
 	delay(DELAYWAYNE);
   
@@ -895,8 +878,5 @@ int		setPrecio( uint8_t ID, uint8_t manguera, unsigned int PPU )		// mierda
       delay(80);
 
         desautorizar(ID);            // DESAUTORIZAR DESPUES DE ENVIAR PRECIOS */
-        
-  
 	return 0;
-	
 }

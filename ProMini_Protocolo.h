@@ -184,8 +184,8 @@ void LoopI2C_Comunicacion()
 					{
 						Serial.print(F("mang  : "));        Serial.println(mang);
 						Serial.print(F("PPU   :"));         Serial.println(PPUArray[surt][lado][mang]);
-						setPrecio(IDs[surt][lado], 1, PPUArray[surt][lado][mang]);
-			
+						setPrecio(IDs[surt][lado], surt, lado, mang, PPUArray[surt][lado][mang]);
+						
 						PPUArray[surt][lado][mang]=0;
 					}
 				}
