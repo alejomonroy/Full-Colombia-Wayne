@@ -112,49 +112,7 @@ void setup()
 	print_infoVenta(2, 1);   // los 6 lados.
 	Serial.println( F("---------------------------") );
 	
-	// ----------------------------------------------------------------------
 	// FIN SETUP
-	
-	Serial.print( F("iniciando…") ); Serial.println(millis());
-
-	/*for( int i=0; i<4; i++ )
-	{
-	    unsigned char trama[25];
-		int manguera=0;
-		int res;
-  
-		EnviarID(IDs[i]);
-		res = RecibirTrama( trama );
-		if(res >= 3)   manguera = VerificaRecibido( trama, res);
-		delay(DELAYWAYNE);
-    
-		getVenta(IDs[i]);                   // Solicita VENTA.
-		delay(DELAYWAYNE);
-    
-		EnviarID(IDs[i]);
-		res = RecibirTrama( trama );
-		if(res >= 3)  VerificaRecibido( trama, res);
-		delay(DELAYWAYNE);
-    
-		getTotales( IDs[i], manguera );             // Solicita TOTALES.
-		delay(DELAYWAYNE);
-    
-		EnviarID(IDs[i]);
-		res = RecibirTrama( trama );
-		if(res >= 3)   manguera = VerificaRecibido( trama, res);
-		delay(DELAYWAYNE);
-    
-		EnviarID(IDs[i]);
-		res = RecibirTrama( trama );
-		if(res >= 3)   manguera = VerificaRecibido( trama, res);
-		delay(DELAYWAYNE);
-	}
-	print_infoVenta(0);
-	print_infoVenta(1);
-	print_infoVenta(2);
-	print_infoVenta(3);
-	print_infoVenta(4);
-	print_infoVenta(5);   // las 6 mangueras. */
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -412,7 +370,7 @@ void Request_I2C()
 
 	if((i2cFuncion.funcion == VENTAS)&&(millis() < i2cFuncion.time))
 	{
-		Serial.print(F("VENTAS: "));		Serial.println(bytesWrite);
+		Serial.print(F("Request VENTAS: "));		Serial.println(bytesWrite);
 		char  bufI2C[33];
 		bzero(bufI2C, sizeof(bufI2C));
 
@@ -423,20 +381,8 @@ void Request_I2C()
 	}
 
 	if((i2cFuncion.funcion == ESTADO_M)&&(millis() < i2cFuncion.time))
-  {
-		Serial.print(F("ESTADO_M: "));		Serial.println(bytesWrite);
-		char  bufI2C[33];
-		bzero(bufI2C, sizeof(bufI2C));
-
-		strncpy(bufI2C, &txData[bytesWrite], bytesReq);
-		Serial.println(bufI2C);
-		
-		bytesWrite += Wire.write(bufI2C);
-  }
-
-	if((i2cFuncion.funcion == SEND_NUM)&&(millis() < i2cFuncion.time))
 	{
-		Serial.print(F("SEND_NUM: "));		Serial.println(bytesWrite);
+		Serial.print(F("Request ESTADO_M: "));		Serial.println(bytesWrite);
 		char  bufI2C[33];
 		bzero(bufI2C, sizeof(bufI2C));
 
@@ -445,4 +391,18 @@ void Request_I2C()
 		
 		bytesWrite += Wire.write(bufI2C);
 	}
+
+	if((i2cFuncion.funcion == SEND_NUM)&&(millis() < i2cFuncion.time))
+	{
+		Serial.print(F("Request SEND_NUM: "));		Serial.println(bytesWrite);
+		char  bufI2C[33];
+		bzero(bufI2C, sizeof(bufI2C));
+
+		strncpy(bufI2C, &txData[bytesWrite], bytesReq);
+		Serial.println(bufI2C);
+		
+		bytesWrite += Wire.write(bufI2C);
+	}
+	
+	i2cFuncion.time = 0;
 }

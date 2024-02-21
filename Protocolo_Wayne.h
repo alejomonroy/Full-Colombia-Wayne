@@ -335,13 +335,13 @@ int		VerificaRecibido( unsigned char *trama, int n)
 	{
 		crc = get_crc_16( trama, n-4 );
 		Serial.print(F("crc16 RX: "));  Serial.print(crc, HEX);
-		Serial.print(F("- crc16: trama: "));  Serial.print((unsigned int)((trama[n-3]<<8) + trama[n-4]), HEX);
+		Serial.print(F("- crc16 trama: "));  Serial.print((unsigned int)((trama[n-3]<<8) + trama[n-4]), HEX);
 		
 		if((trama[n-3]!=0xfa)&&(trama[n-4]!=0xfa))
 		{
 			if(crc != ((trama[n-3]<<8) + trama[n-4]))
 			{	// ERROR CRC.
-				Serial.println(F("ERROR *********"));
+				Serial.println(F(" - ERROR ********* crc16"));
 				crc_error++;
 				if( crc_error<2 )  return -5;    		// La traza no tiene bien el crc.
 				CerrarComunicacion(ID, trama[1]);		// descartar traza. millis
@@ -492,8 +492,8 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			Serial.print(F("F_PRECIO| "));
 			Serial.print(F("Manguera  : "));		Serial.print(pre_mang);     
 			Serial.print(F(", Precio  : "));		Serial.print(temp_precio);
-			Serial.print(F(", Est Ant : "));		Serial.print(mang_status[surt][lado]);
-			Serial.print(F(", Estado  : "));		Serial.print(precio_mang_status);
+			Serial.print(F(", M_Before: "));		Serial.print(mang_status[surt][lado]);
+			Serial.print(F(", M_Now   : "));		Serial.print(precio_mang_status);
 			Serial.print(F(", surtidor: "));		Serial.print(surt);
 			Serial.print(F(", lado    : "));		Serial.println(lado);
 			
@@ -551,8 +551,8 @@ int		VerificaRecibido( unsigned char *trama, int n)
 		if((F_locales&F_VENTA)&&(validarDatos == 1))
 		{
 			Serial.println(F("LLEGA VENTA 260081V"));
-			delay(600);
-      
+			delay(DELAYWAYNE);				// @@@@@@ !!! PROBAR !!! 600ms
+
 			validarDatos=0;
 			getVenta(ID);                   // Solicita VENTA
 			getTotales( ID, pre_mang );     // Solicita TOTALES.
@@ -584,8 +584,6 @@ int		VerificaRecibido( unsigned char *trama, int n)
 						Serial.println(F("VENTA EN CEROS *******"));
 						//desautorizar(ID);
 					}
-					
-//					C1_Placa[0]=0;	C2_Placa[0]=0;
 					
 					finalVenta=0;
 				}
@@ -839,11 +837,11 @@ int		setPrecio( uint8_t ID, uint8_t surt, uint8_t lado, uint8_t manguera, unsign
 		precioBDC[3] =       0x0f&( (PPU%1000) /100);
 		precioBDC[4] =         0x0f&( (PPU%100) /10);
 		precioBDC[5] =           0x0f&( PPU%10 );
-    
+
 		for(uint8_t k=0; k<6; k++) {
 			Serial.print(precioBDC[k], HEX);      Serial.print(F(" "));
 		}      Serial.println(PPU);
-    
+
 		trama[3*i+1] = (0xf0&(precioBDC[0]<<4)) | (0x0f&precioBDC[1]); // MSB
 		trama[3*i+2] = (0xf0&(precioBDC[2]<<4)) | (0x0f&precioBDC[3]);
 		trama[3*i+3] = (0xf0&(precioBDC[4]<<4)) | (0x0f&precioBDC[5]); // LSB

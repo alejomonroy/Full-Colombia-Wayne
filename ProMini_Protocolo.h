@@ -126,9 +126,9 @@ void Verificar_iButton(int cara)
 void LoopI2C_Comunicacion()
 {
 	// ------------------------------------ numeracion ------------------------------------
-	if((i2cFuncion.funcion == NUMERACION)||(millis() < i2cFuncion.time))   // Solicitud de leer las numeraciones. PRINCIPAL: MEGA2560
+	if((i2cFuncion.funcion == NUMERACION)&&(millis() < i2cFuncion.time))   // Solicitud de leer las numeraciones. PRINCIPAL: MEGA2560
 	{
-		Serial.print(F("(2). DatosI2C: "));    Serial.print(DatosI2C);    Serial.print(F(" - "));    Serial.println(millis());
+		Serial.print(F("Funcion: NUMERACION"));		Serial.println(millis());
 		
 		for(int surt=0; surt<Conf.Num_Surt; surt++)
 		{
@@ -171,9 +171,10 @@ void LoopI2C_Comunicacion()
 	}
 	
 	// -----------------------------------------------------------------------------------------------------------------------------
-	if((i2cFuncion.funcion == PRECIOS)||(millis() < i2cFuncion.time))   // Actualizar precio de mangueras.
+	if((i2cFuncion.funcion == PRECIOS)&&(millis() < i2cFuncion.time))   // Actualizar precio de mangueras.
 	{
-		Serial.println(F("CAMBIANDO PRECIOS..."));
+		Serial.print(F("Funcion: PRECIOS"));		Serial.println(millis());
+
 		for(int surt=0; surt<Conf.Num_Surt; surt++)
 		{
 			for(int lado=0; lado<2; lado++)
