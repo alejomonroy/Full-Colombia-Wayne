@@ -373,7 +373,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			// --------------------------------------------------
 			if((trama[i]==0x02)&&(trama[i+1]==0x08))
 			{							//			51 31 1 1 4 3 4 0 81 23 11 2 8 0 0 4 28 0 0 34 77 3  4 0 81 23 11 83 55 3 FA		Venta
-				Serial.println(F("     **** Venta ****"));
+				Serial.print(F("     **** Venta ****  "));
 				i+=2;
 				
 				// 4 uint8_ts 00 00 04 28 -> 0.428
@@ -388,6 +388,8 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				longTemp = 10*(0x0f&(trama[i]>>4)) + (0x0f&trama[i++]);	tempventa += 10000*longTemp;
 				longTemp = 10*(0x0f&(trama[i]>>4)) + (0x0f&trama[i++]);	tempventa += 100*longTemp;
 				longTemp = 10*(0x0f&(trama[i]>>4)) + (0X0f&trama[i++]);	tempventa += longTemp;
+				Serial.print(F("Vol: "));	Serial.print(tempvolumen);
+				Serial.print(F(", Ven: "));	Serial.println(tempventa);
 				
 				F_locales |= F_VENTA;			// pone a 1
 			}
@@ -435,6 +437,8 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				
 				precio_mang_status = 0x0f&(trama[i]>>4);			// Estado Manguera.
 				pre_mang = 0x0f&trama[i++];					// Manguera (1, 2, 3).
+				Serial.print(F("PPU: ")); Serial.print(temp_precio);
+				Serial.print(F(", Mang: ")); Serial.println(pre_mang);
 				
 				//validarDatos=1;
 				F_locales |= F_PRECIO;			// pone a 1
@@ -537,7 +541,6 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				F_globales[surt][lado] = 0;
 				F_ventaOk[surt][lado]=1;
 				
-				mang_status[surt][lado]=IDLE1;
 				getVenta(ID);                   // Solicita VENTA
 				//getTotales( ID, pre_mang );     // Solicita TOTALES.
 				return -1;
@@ -551,7 +554,10 @@ int		VerificaRecibido( unsigned char *trama, int n)
 		if((F_locales&F_VENTA)&&(validarDatos == 1))
 		{
 			Serial.println(F("LLEGA VENTA 260081V"));
-			delay(DELAYWAYNE);				// @@@@@@ !!! PROBAR !!! 600ms
+
+			EnviarID(ID);
+			res = RecibirTrama( trama );
+			delay(300);
 
 			validarDatos=0;
 			getVenta(ID);                   // Solicita VENTA
@@ -572,7 +578,8 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			{
 				venta[surt][lado].Venta = tempventa;
 				venta[surt][lado].Volumen = ((double)tempvolumen)/1000;
-				
+				mang_status[surt][lado]=IDLE1;
+
 				if(finalVenta==1)
 				{
 					Serial.println(F("FIN VENTA ******* 2"));
@@ -605,7 +612,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			Serial.print(F("Venta  : "));			Serial.println(venta[surt][lado].Venta);
 			Serial.print(F("PPU    : "));			Serial.println(venta[surt][lado].PPU);
 			Serial.print(F("numeracion : "));		Serial.println(venta[surt][lado].Numeracion);
-			
+
 			long errorVenta = venta[surt][lado].Venta - (venta[surt][lado].Volumen*venta[surt][lado].PPU);
 			Serial.print(F("error : "));	Serial.println(errorVenta);
 			

@@ -83,6 +83,8 @@ void LoopProtocolo_wayne()		// Codigo para comunicacion con surtidor Marca WAYNE
 	for(int surt=0; surt<3; surt++) {
 		for(int lado=0; lado<2; lado++) {
 			print_infoVenta(surt, lado);
+		}
+	}
 	
 	delay(DELAYWAYNE);
 }
