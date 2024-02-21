@@ -80,12 +80,10 @@ void LoopProtocolo_wayne()		// Codigo para comunicacion con surtidor Marca WAYNE
 		}
 	}
 
-	print_infoVenta(0, 0);
-	print_infoVenta(0, 1);
-	print_infoVenta(1, 0);
-	print_infoVenta(1, 1);
-	print_infoVenta(2, 0);
-	print_infoVenta(2, 1);   // los 6 lados.
+	for(int surt=0; surt<3; surt++) {
+		for(int lado=0; lado<2; lado++) {
+			print_infoVenta(surt, lado);
+	
 	delay(DELAYWAYNE);
 }
 
@@ -162,7 +160,7 @@ void LoopI2C_Comunicacion()
 		}
 
 		i2cFuncion.funcion = 0;
-	} // FIN ENVIAR VENTA.
+	}
 	
 	// -----------------------------------------------------------------------------------------------------------------------------
 	if( i2cFuncion.funcion == 6 )
@@ -194,8 +192,7 @@ void LoopI2C_Comunicacion()
 		}
 		
 		i2cFuncion.funcion = 0;
-	} // 
-	
+	}
 }
 
 // ---------------------------------------------------------------
