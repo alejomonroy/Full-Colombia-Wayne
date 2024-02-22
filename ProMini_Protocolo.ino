@@ -403,6 +403,4 @@ void Request_I2C()
 		
 		bytesWrite += Wire.write(bufI2C);
 	}
-	
-	i2cFuncion.time = 0;
 }

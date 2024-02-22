@@ -45,8 +45,6 @@ char char2int(char input)
 // ----------------------------------------------------------------------------------------------------
 void LoopProtocolo_wayne()		// Codigo para comunicacion con surtidor Marca WAYNE.
 {
-	int manguera=0;
-	
 	for( int surt=0; surt<Conf.Num_Surt; surt++ )	// surtidores
 	{
 		for( int lado=0; lado<2; lado++ )	// surtidores
@@ -60,22 +58,22 @@ void LoopProtocolo_wayne()		// Codigo para comunicacion con surtidor Marca WAYNE
 			// ------------------- ENVIAR ID -------------------
 			getEstado(IDs[surt][lado]);
 			res = RecibirTrama( trama );
-			if(res >= 3)   manguera = VerificaRecibido( trama, res);
+			if(res >= 3)   VerificaRecibido( trama, res);
 			delay(DELAYWAYNE);
 			
 			EnviarID(IDs[surt][lado]);
 			res = RecibirTrama( trama );
-			if(res >= 3)   manguera = VerificaRecibido( trama, res);
+			if(res >= 3)   VerificaRecibido( trama, res);
 			delay(DELAYWAYNE);
 			
 			EnviarID(IDs[surt][lado]);
 			res = RecibirTrama( trama );
-			if(res >= 3)   manguera = VerificaRecibido( trama, res);
+			if(res >= 3)   VerificaRecibido( trama, res);
 			delay(DELAYWAYNE);
 			
 			EnviarID(IDs[surt][lado]);
 			res = RecibirTrama( trama );
-			if(res >= 3)   manguera = VerificaRecibido( trama, res);
+			if(res >= 3)   VerificaRecibido( trama, res);
 			delay(DELAYWAYNE);
 		}
 	}

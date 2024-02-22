@@ -58,7 +58,6 @@ int res;
  *****************************************************************************************************/
 // Primero se envia el uint8_t menos significativo
 // despues el uint8_t mas significativo, se calcula con toda la trama, incluyendo el ID de la cara.
-uint8_t	crc_error;
 long get_crc_16( unsigned char *buf, int size )
 {
 	int   k;
@@ -156,12 +155,14 @@ int    RecibirTrama( unsigned char *trama )  // Tiempo de espera = 100ms
 //  Serial.println(F("punto 1"));
 	// recibir una trama hasta el fin de linea 0xfa
 	unsigned long	tini_loop = millis();
+
+  unsigned long  tini_prueba = millis();
 	do
 	{
 		while(SerialIgem.available() > 0)
 		{
 			c = SerialIgem.read();
-			//Serial.println(c, HEX);
+      Serial.print(0xff&(c), HEX);  Serial.print(F(" "));
 			if( pos<99 ) trama[pos++] = c;
 			
 			tini_loop = millis();
@@ -184,7 +185,8 @@ int    RecibirTrama( unsigned char *trama )  // Tiempo de espera = 100ms
 		}	// */
 	
 	}while( (millis()-tini_loop)<50 ); // Terminar si no llega traza y se toma como cara AUSENTE.
-	
+  Serial.print("T_RX: ");  Serial.println(millis()-tini_prueba);
+
 //  Serial.println(F("punto 2"));
 	//Serial.println(F("______"));
 	if((millis()-tini_loop)>50)
@@ -336,16 +338,15 @@ int		VerificaRecibido( unsigned char *trama, int n)
 		crc = get_crc_16( trama, n-4 );
 		Serial.print(F("crc16 RX: "));  Serial.print(crc, HEX);
 		Serial.print(F("- crc16 trama: "));  Serial.print((unsigned int)((trama[n-3]<<8) + trama[n-4]), HEX);
-		
+		uint8_t  crc_error=0;
+
 		if((trama[n-3]!=0xfa)&&(trama[n-4]!=0xfa))
 		{
 			if(crc != ((trama[n-3]<<8) + trama[n-4]))
 			{	// ERROR CRC.
 				Serial.println(F(" - ERROR ********* crc16"));
-				crc_error++;
-				if( crc_error<2 )  return -5;    		// La traza no tiene bien el crc.
+				crc_error=1;
 				CerrarComunicacion(ID, trama[1]);		// descartar traza. millis
-				return -6;
 			} Serial.println();
 		}
 		
@@ -424,7 +425,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			// --------------------------------------------------
 			if((trama[i]==0x03)&&(trama[i+1]==0x04))
 			{							//			51 3A 3 4 0 81 23 11 26 14 3 FA				// Llega sin hacer solicitud previa
-				Serial.println(F("     **** Precio ****"));
+				Serial.print(F("     **** Precio **** "));
 				i+=2;
 				
 				precioBDC[0] = trama[i];
@@ -448,7 +449,14 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				51 3E 1 1 1 1 1 2 F7 4F 3 FA
 				51 33 1 1 1 1 1 2 2B 8F 3 FA	*/
 		}
-		
+
+    if(crc_error==1)
+    {
+      if(F_locales&F_TOTAL) getTotales( ID, total_mang );
+      if(F_locales&F_VENTA) getVenta(ID);
+      return -5;
+    }
+    
 		// ----------------------------------------------------------------------------------------------------
 		if(F_locales&F_ESTADO)
 		{
@@ -541,9 +549,10 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				F_globales[surt][lado] = 0;
 				F_ventaOk[surt][lado]=1;
 				
+        mang_status[surt][lado]=IDLE1;
 				getVenta(ID);                   // Solicita VENTA
 				//getTotales( ID, pre_mang );     // Solicita TOTALES.
-				return -1;
+				return 0;
 			}
 			
 			F_locales &= ~F_PRECIO;
@@ -562,7 +571,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			validarDatos=0;
 			getVenta(ID);                   // Solicita VENTA
 			getTotales( ID, pre_mang );     // Solicita TOTALES.
-			return -1;
+			return 0;
 		}
 		
 		if((F_locales&F_VENTA)&&(validarDatos == 0))
@@ -578,7 +587,6 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			{
 				venta[surt][lado].Venta = tempventa;
 				venta[surt][lado].Volumen = ((double)tempvolumen)/1000;
-				mang_status[surt][lado]=IDLE1;
 
 				if(finalVenta==1)
 				{
