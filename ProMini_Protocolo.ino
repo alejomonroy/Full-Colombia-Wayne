@@ -254,6 +254,8 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 	{
 		Serial.println(F("Estado de mangueras"));
 
+		Time_SYNC = millis()+30;
+
 		i2cFuncion.funcion = ESTADO_M;
 		i2cFuncion.time = millis() + 200;
 

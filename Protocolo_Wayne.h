@@ -162,7 +162,7 @@ int    RecibirTrama( unsigned char *trama )  // Tiempo de espera = 100ms
 		while(SerialIgem.available() > 0)
 		{
 			c = SerialIgem.read();
-      Serial.print(0xff&(c), HEX);  Serial.print(F(" "));
+			Serial.print(0xff&(c), HEX);  Serial.print(F(" "));
 			if( pos<99 ) trama[pos++] = c;
 			
 			tini_loop = millis();
@@ -549,7 +549,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				F_globales[surt][lado] = 0;
 				F_ventaOk[surt][lado]=1;
 				
-        mang_status[surt][lado]=IDLE1;
+				mang_status[surt][lado]=IDLE1;
 				getVenta(ID);                   // Solicita VENTA
 				//getTotales( ID, pre_mang );     // Solicita TOTALES.
 				return 0;
@@ -567,6 +567,8 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			EnviarID(ID);
 			res = RecibirTrama( trama );
 			delay(300);
+
+			if((millis()<Time_SYNC) || ((millis()>(Time_SYNC+770))&&(millis()<Time_SYNC+1000)))	return 0;
 
 			validarDatos=0;
 			getVenta(ID);                   // Solicita VENTA
@@ -587,6 +589,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			{
 				venta[surt][lado].Venta = tempventa;
 				venta[surt][lado].Volumen = ((double)tempvolumen)/1000;
+				venta[surt][lado].manguera = pre_mang;
 
 				if(finalVenta==1)
 				{
@@ -619,6 +622,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			Serial.print(F("Volumen: "));			Serial.println(venta[surt][lado].Volumen);
 			Serial.print(F("Venta  : "));			Serial.println(venta[surt][lado].Venta);
 			Serial.print(F("PPU    : "));			Serial.println(venta[surt][lado].PPU);
+			Serial.print(F("manguera   : "));		Serial.println(venta[surt][lado].manguera);
 			Serial.print(F("numeracion : "));		Serial.println(venta[surt][lado].Numeracion);
 
 			long errorVenta = venta[surt][lado].Venta - (venta[surt][lado].Volumen*venta[surt][lado].PPU);
