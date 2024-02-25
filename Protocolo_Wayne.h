@@ -87,15 +87,14 @@ int		EnviarID( uint8_t ID )
 {
 	digitalWrite(TXE485,RS485Transmit);  digitalWrite(RXE485,RS485Transmit);
 	
-	delay(1);
+	//delay(1);
 	SerialIgem.write( ID );
 	SerialIgem.write(0x20);
 	SerialIgem.write(0xfa);
 	
 	digitalWrite(TXE485,RS485Receive);  digitalWrite(RXE485,RS485Receive);
 	
-	Serial.print( F("ID: (") );    // Usa: 0.5 ms
-	Serial.print( ID, HEX );	Serial.print( F(" 20 fa) ---> ") );	Serial.println( millis() );  // */
+	Serial.print( F("TX ID: (") ); Serial.print( ID, HEX );	Serial.print( F(" 20 fa) > ") );	Serial.println( millis() );  // */
 	return 0;
 }
 
@@ -136,8 +135,7 @@ int    EnviarTrama( uint8_t ID, unsigned char *trama, int n ) // 51 36 Trama crc
 	
 	SerialIgem.write(0x03);
 	SerialIgem.write(0xfa);
-	
-	Serial.println(F("3 fa)"));
+	Serial.print(F("3 fa) > "));  Serial.println( millis() );
 	
 	while(SerialIgem.available() > 0) SerialIgem.read();  // Borrar datos y posibles errores en puerto serial.
 	
@@ -155,12 +153,11 @@ int    RecibirTrama( unsigned char *trama )  // Tiempo de espera = 100ms
 //  Serial.println(F("punto 1"));
 	// recibir una trama hasta el fin de linea 0xfa
 	unsigned long	tini_loop = millis();
-
   unsigned long  tini_prueba = millis();
-	do
-	{
-		while(SerialIgem.available() > 0)
-		{
+  Serial.print(F("RX: ("));
+  
+	do {
+		while(SerialIgem.available() > 0) {
 			c = SerialIgem.read();
 			Serial.print(0xff&(c), HEX);  Serial.print(F(" "));
 			if( pos<99 ) trama[pos++] = c;
@@ -185,10 +182,9 @@ int    RecibirTrama( unsigned char *trama )  // Tiempo de espera = 100ms
 		}	// */
 	
 	}while( (millis()-tini_loop)<50 ); // Terminar si no llega traza y se toma como cara AUSENTE.
-  Serial.print("T_RX: ");  Serial.println(millis()-tini_prueba);
+  Serial.print(F("): "));  Serial.print(pos);  Serial.print(F(": Time: "));  Serial.print(millis()-tini_prueba);
+  Serial.print(F(" < "));   Serial.println(millis());
 
-//  Serial.println(F("punto 2"));
-	//Serial.println(F("______"));
 	if((millis()-tini_loop)>50)
 	{
 		Serial.print(pos);
@@ -204,17 +200,6 @@ int    RecibirTrama( unsigned char *trama )  // Tiempo de espera = 100ms
 		if(ContRecepcion>0x3f) ContRecepcion = 0x31;
 	}
 	
-	// mostrar la trama recibida.
-	Serial.print(F(":"));	Serial.print(tini_loop);	Serial.print(F(", RX2:"));  Serial.print(pos);  Serial.print(F(": "));
-	if(pos ==0)   Serial.println(F("NO TRAZA..."));  // Mostros traza que llega.
-	else
-	{
-		
-		Serial.print(F("("));
-		for(int i=0; i<pos; i++) { Serial.print(trama[i], HEX);  Serial.print( F(" ") ); }
-		Serial.print(F(") <--- "));		Serial.println(millis());
-	}	//*/
-
 	return pos;   // No se recibio nada.
 }
 
@@ -230,6 +215,7 @@ int		EnviarTrama2( uint8_t ID, unsigned char *trama, int n )		// Con confirmacio
 	{
 		EnviarTrama(ID, trama, n);        // Envia solicitud de volumen.    51 35 | 1 1 0 | A2 50 | 3 FA
 		res = RecibirTrama( trama2 );      // Validar trama recibida.        50 C5 FA
+    delay(DELAYWAYNE);
 		
 		if(res>19)
 		{
@@ -265,11 +251,10 @@ int    CerrarComunicacion(uint8_t ID, uint8_t consecutivo)
 	
 	digitalWrite(TXE485, RS485Receive);
 	digitalWrite(RXE485, RS485Receive);
-	
-/*	Serial.print(F("Cerrar COM: ("));
-	Serial.print( ID, HEX );    Serial.print(" ");
-	Serial.print( 0xc0 + (0x0f&consecutivo), HEX);              Serial.print(" ");
-	Serial.println(F("fa) --->"));	// */
+
+  Serial.print(F("TX: ("));	Serial.print( ID, HEX );    Serial.print(" ");
+	Serial.print( 0xc0 + (0x0f&consecutivo), HEX);    Serial.print(" ");
+	Serial.println(F("fa)"));
 	return 0;
 }
 
@@ -346,10 +331,9 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			{	// ERROR CRC.
 				Serial.println(F(" - ERROR ********* crc16"));
 				crc_error=1;
-				CerrarComunicacion(ID, trama[1]);		// descartar traza. millis
 			} Serial.println();
 		}
-		
+    
 		// ------------------------------------------------------
 		CerrarComunicacion(ID, trama[1]);          						// Se cierra comunicacion.      50 CE FA
 		
@@ -358,12 +342,15 @@ int		VerificaRecibido( unsigned char *trama, int n)
 		while( (n-i)>4 )
 		{
 			Serial.print(F("----- n: "));	Serial.print(n);	Serial.print(F(" ,i: "));	Serial.println(i);
-			if(ciclos_n++>10) return -7;
+			if(ciclos_n++>10) {
+			  return -7;
+        Serial.print(F(" > "));  Serial.println( millis() );
+			}
 			
 			// --------------------------------------------------
 			if((trama[i]==0x01)&&(trama[i+1]==0x01))
 			{
-				Serial.println(F("     **** Estado ****"));
+        Serial.print(millis());   Serial.print(F("     **** Estado **** "));
 				
 				i+=2;
 				temp_estado = trama[i++];
@@ -374,7 +361,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			// --------------------------------------------------
 			if((trama[i]==0x02)&&(trama[i+1]==0x08))
 			{							//			51 31 1 1 4 3 4 0 81 23 11 2 8 0 0 4 28 0 0 34 77 3  4 0 81 23 11 83 55 3 FA		Venta
-				Serial.print(F("     **** Venta ****  "));
+				Serial.print(millis());   Serial.print(F("     **** Venta **** "));
 				i+=2;
 				
 				// 4 uint8_ts 00 00 04 28 -> 0.428
@@ -398,7 +385,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			// --------------------------------------------------
 			if((trama[i]==0x65)&&(trama[i+1]==0x10))
 			{							//			51 39 65 10 1 0 0 42 66 33 0 0 42 66 33 0 0 0 0 0 A4 F0 3 FA
-				Serial.println(F("     **** Totales ****"));
+				Serial.print(millis());   Serial.println(F("     **** Totales **** "));
 				i+=2;
 				
 				total_mang= 0x0f&trama[i++];			// Manguera.
@@ -425,7 +412,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			// --------------------------------------------------
 			if((trama[i]==0x03)&&(trama[i+1]==0x04))
 			{							//			51 3A 3 4 0 81 23 11 26 14 3 FA				// Llega sin hacer solicitud previa
-				Serial.print(F("     **** Precio **** "));
+				Serial.print(millis());   Serial.print(F("     **** Precio **** "));
 				i+=2;
 				
 				precioBDC[0] = trama[i];
@@ -454,6 +441,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
     {
       if(F_locales&F_TOTAL) getTotales( ID, total_mang );
       if(F_locales&F_VENTA) getVenta(ID);
+      Serial.print(F(" > "));  Serial.println( millis() );
       return -5;
     }
     
@@ -522,8 +510,6 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			if( (mang_status[surt][lado]==READY)&&(precio_mang_status==1) )		// INICIO DE LA VENTA	***
 			{
 				//desautorizar(ID);
-				delay(DELAYWAYNE);
-				
 				Serial.println(F("INICIA VENTA *******"));
 				Serial.print(F("ID: "));  Serial.println(ID, HEX);
 				
@@ -552,6 +538,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				mang_status[surt][lado]=IDLE1;
 				getVenta(ID);                   // Solicita VENTA
 				//getTotales( ID, pre_mang );     // Solicita TOTALES.
+        Serial.print(F(" > "));  Serial.println( millis() );
 				return 0;
 			}
 			
@@ -566,13 +553,12 @@ int		VerificaRecibido( unsigned char *trama, int n)
 
 			EnviarID(ID);
 			res = RecibirTrama( trama );
-			delay(300);
-
-			if((millis()<Time_SYNC) || ((millis()>(Time_SYNC+770))&&(millis()<Time_SYNC+1000)))	return 0;
+			//delay(300);
 
 			validarDatos=0;
 			getVenta(ID);                   // Solicita VENTA
 			getTotales( ID, pre_mang );     // Solicita TOTALES.
+      Serial.print(F(" > "));  Serial.println( millis() );
 			return 0;
 		}
 		
@@ -634,16 +620,17 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				
 				F_ventaOk[surt][lado] = 0;			// No se envia esta venta y se permite releer en el proximo ciclo.
 				F_globales[surt][lado] = 0;
-				
+	      Serial.print(F(" > "));  Serial.println( millis() );
 				return -6;
 			}
 			
 			F_enviado[surt][lado] = 0;
 			F_ventaOk[surt][lado]= 0x10 + 2*surt + lado;    // 0-7 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-			Serial.print(F("Volumen 2: ")); Serial.println(venta[surt][lado].Volumen);
-			
+			Serial.print(F("Volumen 2: ")); Serial.print(venta[surt][lado].Volumen);
+      Serial.print(F(" > "));  Serial.println( millis() );
 			return ret;
 		}
+    Serial.print(F(" > "));  Serial.println( millis() );
 		return ret;
 	}
 }
@@ -869,19 +856,16 @@ int		setPrecio( uint8_t ID, uint8_t surt, uint8_t lado, uint8_t manguera, unsign
 	if(manguera==0) EnviarTrama2(ID, trama, 5);     // si manguera es 1.
 	if(manguera==1) EnviarTrama2(ID, trama, 8);     // si manguera es 2.
 	if(manguera==2) EnviarTrama2(ID, trama, 11);    // si manguera es 3.  */
-	delay(DELAYWAYNE);
 	
 	trama[2] = 0x02;
 	trama[3] = 0x01;
 	trama[4] = manguera+1;
 	EnviarTrama2(ID, trama, 3);        // 51 32 2 1 1 92 E4 3 fa
-	delay(DELAYWAYNE);
   
 	trama[2] = 0x01;
 	trama[3] = 0x01;
 	trama[4] = 0x05;
 	EnviarTrama2(ID, trama, 3);        // 51 36 1 1 8 22 16 3 fa
-	delay(DELAYWAYNE);
   
 	trama[2] = 0x01;
 	trama[3] = 0x01;

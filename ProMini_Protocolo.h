@@ -1,3 +1,5 @@
+void LoopI2C_Comunicacion();
+
 /* ***************************************************************************************************
  *                                   Escribir Estructuras en EEPROM                                  *
  *****************************************************************************************************/
@@ -47,43 +49,41 @@ void LoopProtocolo_wayne()		// Codigo para comunicacion con surtidor Marca WAYNE
 {
 	for( int surt=0; surt<Conf.Num_Surt; surt++ )	// surtidores
 	{
+    while(SYNC) LoopI2C_Comunicacion();
+    delay(40);    SYNC = 1;
+    
 		for( int lado=0; lado<2; lado++ )	// surtidores
 		{
 			unsigned char trama[100];
 
 			// -------------------------------------------------
-			if((0x01&ContLoop)==0)
-				Verificar_iButton(lado);
+			//	Verificar_iButton(lado);
 			
 			// ------------------- ENVIAR ID -------------------
+      Serial.println(F("_____"));
 			getEstado(IDs[surt][lado]);
-			res = RecibirTrama( trama );
-			if(res >= 3)   VerificaRecibido( trama, res);
-			delay(DELAYWAYNE);
+      Serial.println(F("_____"));
 			
 			EnviarID(IDs[surt][lado]);
 			res = RecibirTrama( trama );
 			if(res >= 3)   VerificaRecibido( trama, res);
-			delay(DELAYWAYNE);
 			
 			EnviarID(IDs[surt][lado]);
 			res = RecibirTrama( trama );
 			if(res >= 3)   VerificaRecibido( trama, res);
-			delay(DELAYWAYNE);
 			
 			EnviarID(IDs[surt][lado]);
 			res = RecibirTrama( trama );
 			if(res >= 3)   VerificaRecibido( trama, res);
-			delay(DELAYWAYNE);
 		}
 	}
 
-	for(int surt=0; surt<3; surt++) {
-		for(int lado=0; lado<2; lado++) {
-			print_infoVenta(surt, lado);
-		}
-	}
-	
+  for(int surt=0; surt<3; surt++) {
+    for(int lado=0; lado<2; lado++) {
+      print_infoVenta(surt, lado);
+    }
+  }
+  
 	delay(DELAYWAYNE);
 }
 
@@ -159,12 +159,6 @@ void LoopI2C_Comunicacion()
 			}
 		}
 
-		i2cFuncion.funcion = 0;
-	}
-	
-	// -----------------------------------------------------------------------------------------------------------------------------
-	if( i2cFuncion.funcion == 6 )
-	{
 		i2cFuncion.funcion = 0;
 	}
 	

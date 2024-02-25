@@ -20,7 +20,7 @@
 #include <Wire.h>            // I2C
 #include <avr/pgmspace.h>
 
-#define DELAYWAYNE  50
+#define DELAYWAYNE  5
 #define ESPERAIBUTTON	6000
 
 #define GASOLINA  1
@@ -39,8 +39,6 @@
 #define NUMERACION	5
 #define SEND_NUM	6
 #define CONFIG		7
-
-int ContLoop=0;
 
 /* ******************************************************************************************
  *                                     VARIABLES DE PROGRAMA                                *
@@ -116,15 +114,20 @@ void setup()
 }
 
 // ------------------------------------------------------------------------------------------------
+int ContLoop=0;
+unsigned long TLoop=0;
+
 void loop()
 {
-	Serial.print( F(" ____________________________________________________"));
+	Serial.print( F("______________________________"));    Serial.print(millis() - TLoop);   
 	Serial.print( F(" - "));    Serial.print(millis());  Serial.print( F(" - ContLoop: "));    Serial.println(ContLoop);
-
+  TLoop = millis();
+  
 	LoopI2C_Comunicacion();			// Si no llega traza, su uso de tiempo es minimo.
 	LoopProtocolo_wayne();
 	ContLoop++;
 }
+
 
 /* ***************************************************************************************************
  *                                              iButton                                              *
@@ -164,7 +167,7 @@ void getKeyCode(OneWire   ds, uint8_t *addr)   // Leer codigo iButton
 // ------------------
 void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 {
-	Serial.print(  F("Recibe_I2C(). howMany: ") );	Serial.println( howMany );
+	//Serial.print(  F("Recibe_I2C(). howMany: ") );	Serial.println( howMany );
 	char		strI2C[100];		// Datos. cada vez que van llegando datos se van guardando. debe ser GLOBAL.
 	volatile	uint8_t  varI = 0;
 
@@ -254,7 +257,8 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 	{
 		Serial.println(F("Estado de mangueras"));
 
-		Time_SYNC = millis()+30;
+		SYNC = 0;
+    //SYNC = millis();
 
 		i2cFuncion.funcion = ESTADO_M;
 		i2cFuncion.time = millis() + 200;
@@ -368,11 +372,12 @@ uint8_t	strcmpEDS(char *str1, char *str2, int	noChar)							// Retorna 0, o otro
 void Request_I2C()
 {
 	int bytesReq = min(32, strlen(txData) - bytesWrite);
-	Serial.print(F("Request_I2C(): "));	Serial.print(bytesReq);		Serial.print(F(" - "));	Serial.println(i2cFuncion.time-millis());
+	//Serial.print(F("Request_I2C(): "));	Serial.print(bytesReq);		Serial.print(F(" | "));	Serial.print(i2cFuncion.time-millis());
+  //Serial.print(F(" | "));  Serial.println(i2cFuncion.funcion);
 
 	if((i2cFuncion.funcion == VENTAS)&&(millis() < i2cFuncion.time))
 	{
-		Serial.print(F("Request VENTAS: "));		Serial.println(bytesWrite);
+		//Serial.print(F("Request VENTAS: "));		Serial.println(bytesWrite);
 		char  bufI2C[33];
 		bzero(bufI2C, sizeof(bufI2C));
 
@@ -384,7 +389,7 @@ void Request_I2C()
 
 	if((i2cFuncion.funcion == ESTADO_M)&&(millis() < i2cFuncion.time))
 	{
-		Serial.print(F("Request ESTADO_M: "));		Serial.println(bytesWrite);
+		//Serial.print(F("Request ESTADO_M: "));		Serial.println(bytesWrite);
 		char  bufI2C[33];
 		bzero(bufI2C, sizeof(bufI2C));
 
@@ -396,7 +401,7 @@ void Request_I2C()
 
 	if((i2cFuncion.funcion == SEND_NUM)&&(millis() < i2cFuncion.time))
 	{
-		Serial.print(F("Request SEND_NUM: "));		Serial.println(bytesWrite);
+		//Serial.print(F("Request SEND_NUM: "));		Serial.println(bytesWrite);
 		char  bufI2C[33];
 		bzero(bufI2C, sizeof(bufI2C));
 

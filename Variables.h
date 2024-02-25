@@ -1,7 +1,7 @@
 /* ***************************************************************************************************
  *                                               VENTAS                                              *
  *****************************************************************************************************/
-unsigned long Time_SYNC;
+unsigned long SYNC=1;
 
 typedef struct                      					// Dato que se acaba de leer desde el protocolo. 15Bytes.
 {
@@ -76,7 +76,7 @@ typedef struct
  *****************************************************************************************************/
 typedef struct
 {
-	uint8_t	Num_Surt = 1;
-	uint8_t	Num_Mang[3] = { 1, 0, 0 };
+	uint8_t	Num_Surt = 2;
+	uint8_t	Num_Mang[3] = { 2, 1, 0 };
 }	Configuracion;
 Configuracion Conf;
