@@ -570,8 +570,8 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			Serial.print(F(", surtidor:"));		Serial.print(surt);	Serial.print(F(", lado:"));		Serial.print(lado);			
 			Serial.print(F(" - "));				Serial.println(millis());
 			
-			// @@@@@ aqui se debe revizar un posible error en los datos que se insertan en venta
-			if(precio_mang_status==0)	// actualiza venta solo si la manguera esta colgada. hay que mirar lo de los totales...
+			// @@@@@ aqui se debe revizar un posible error en los datos que se insertan en venta.
+			if(precio_mang_status==0)	// actualiza venta solo si la manguera esta colgada. hay que mirar lo de los totales......
 			{
 				venta[surt][lado].Venta = tempventa;
 				venta[surt][lado].Volumen = ((double)tempvolumen)/1000;

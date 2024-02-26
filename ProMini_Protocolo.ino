@@ -367,7 +367,7 @@ uint8_t	strcmpEDS(char *str1, char *str2, int	noChar)							// Retorna 0, o otro
 	}
 	return 0;
 }
-*/
+ */
 // -----------------------------------------------------------------------------------------------------
 void Request_I2C()
 {
