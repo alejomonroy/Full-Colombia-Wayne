@@ -255,7 +255,7 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 	// __________________________________________________
 	if( strcmp_P( REQcomand, (PGM_P)F("estado") )==0 )		// REQUEST.
 	{
-		Serial.println(F("Estado de mangueras"));
+		//Serial.println(F("Estado de mangueras"));
 
 		SYNC = 0;
     //SYNC = millis();
@@ -338,7 +338,7 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 		Serial.print(F("cantidad: "));  Serial.println(i2cAutoriza.cantidad);
 
 		funAuth[surt][lado].funcion = AUTORIZAR;
-		funAuth[surt][lado].time = millis() + 30000;    // La vigencia de la autorizacion no es mas de 30 segundos.
+		funAuth[surt][lado].time = millis() + 20000;    // La vigencia de la autorizacion no es mas de 30 segundos.
 		mang_status[surt][lado] = READY;
 	} // */
 	
@@ -350,8 +350,8 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 	}
 	else
 	{
-		Serial.print( F("ORDEN...") );
-		Serial.println( i2cFuncion.funcion );
+		Serial.print( F("ORDEN...") );		Serial.print( i2cFuncion.funcion );
+    Serial.print( F(" - ") );    Serial.println(millis());
 	}
 }
 
@@ -367,7 +367,7 @@ uint8_t	strcmpEDS(char *str1, char *str2, int	noChar)							// Retorna 0, o otro
 	}
 	return 0;
 }
- */
+*/
 // -----------------------------------------------------------------------------------------------------
 void Request_I2C()
 {

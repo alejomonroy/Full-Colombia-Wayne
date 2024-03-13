@@ -320,19 +320,34 @@ int		VerificaRecibido( unsigned char *trama, int n)
 
 	if(n >= 9)				// 51 35 1 1 5 da cb 3 fa
 	{
+		int pos_10 = -1;
+		if (trama[n-4] == 0x10 && trama[n-3] == 0xFA) {
+			pos_10 = n-4;
+			n--;
+		}
+		if (trama[n-5] == 0x10 && trama[n-4] == 0xFA) {
+			pos_10 = n-5;
+			n--;
+		}
+		if(pos_10 != -1) {
+			for (int i=pos_10; i<n; i++) {
+				trama[i] = trama[i+1];
+			}
+		}
+
 		crc = get_crc_16( trama, n-4 );
+		for(int i=0; i<n; i++) {
+			Serial.print(trama[i], HEX);  Serial.print(F(" "));
+		} Serial.println();
+
 		Serial.print(F("crc16 RX: "));  Serial.print(crc, HEX);
 		Serial.print(F("- crc16 trama: "));  Serial.print((unsigned int)((trama[n-3]<<8) + trama[n-4]), HEX);
-		uint8_t  crc_error=0;
 
-		if((trama[n-3]!=0xfa)&&(trama[n-4]!=0xfa))
-		{
-			if(crc != ((trama[n-3]<<8) + trama[n-4]))
-			{	// ERROR CRC.
-				Serial.println(F(" - ERROR ********* crc16"));
-				crc_error=1;
-			} Serial.println();
-		}
+		if(crc != ((trama[n-3]<<8) + trama[n-4]))
+		{	// ERROR CRC.
+			Serial.println(F(" - ERROR ********* crc16"));
+			return -6;
+		} Serial.println();
     
 		// ------------------------------------------------------
 		CerrarComunicacion(ID, trama[1]);          						// Se cierra comunicacion.      50 CE FA
@@ -343,14 +358,18 @@ int		VerificaRecibido( unsigned char *trama, int n)
 		{
 			Serial.print(F("----- n: "));	Serial.print(n);	Serial.print(F(" ,i: "));	Serial.println(i);
 			if(ciclos_n++>10) {
-			  return -7;
-        Serial.print(F(" > "));  Serial.println( millis() );
+				return -7;
+    			Serial.print(F(" > "));  Serial.println( millis() );
 			}
 			
 			// --------------------------------------------------
+			if((trama[i]==0x10)&&(trama[i+1]==0xfa))
+				i+=2;
+
+			// --------------------------------------------------
 			if((trama[i]==0x01)&&(trama[i+1]==0x01))
 			{
-        Serial.print(millis());   Serial.print(F("     **** Estado **** "));
+				Serial.print(millis());   Serial.print(F("     **** Estado **** "));
 				
 				i+=2;
 				temp_estado = trama[i++];
@@ -420,8 +439,8 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				precioBDC[2] = trama[i+2];
 				
 				temp_precio  = 100000*(0x0f&(trama[i]>>4)) + 10000*(0x0f&trama[i++]); 	                      //	4 uint8_ts 00 81 23 -> 8123
-				temp_precio +=		1000*(0x0f&(trama[i]>>4)) +   100*(0x0f&trama[i++]);
-				temp_precio +=		  10*(0x0f&(trama[i]>>4)) +       (0x0f&trama[i++]);
+				temp_precio +=   1000*(0x0f&(trama[i]>>4)) +   100*(0x0f&trama[i++]);
+				temp_precio +=     10*(0x0f&(trama[i]>>4)) +       (0x0f&trama[i++]);
 				
 				precio_mang_status = 0x0f&(trama[i]>>4);			// Estado Manguera.
 				pre_mang = 0x0f&trama[i++];					// Manguera (1, 2, 3).
@@ -437,14 +456,6 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				51 33 1 1 1 1 1 2 2B 8F 3 FA	*/
 		}
 
-    if(crc_error==1)
-    {
-      if(F_locales&F_TOTAL) getTotales( ID, total_mang );
-      if(F_locales&F_VENTA) getVenta(ID);
-      Serial.print(F(" > "));  Serial.println( millis() );
-      return -5;
-    }
-    
 		// ----------------------------------------------------------------------------------------------------
 		if(F_locales&F_ESTADO)
 		{
@@ -470,7 +481,8 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			Serial.print(tmpnumeracion);		Serial.print(F(" - surtidor: "));				Serial.println(surt);
 			
 			// datos de totales.
-			if(mang_status[surt][lado]==IDLE1)
+			//if(mang_status[surt][lado]==IDLE1)
+			if((mang_status[surt][lado]==IDLE1)&&(temp_precio != 0))
 			{
 				if((venta[surt][lado].Numeracion - tmpnumeracion)!=0) Serial.println(F("NO COINCIDE NUMERACION"));
 				
@@ -526,6 +538,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			// -------------------------
 			if( (mang_status[surt][lado]== WORK)&&(precio_mang_status==0) )		// FINAL DE LA VENTA	***
 			{
+				desautorizar(ID);
 				Serial.println(F("FIN VENTA ******* 1"));
 				validarDatos=1;
 				
@@ -538,7 +551,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				mang_status[surt][lado]=IDLE1;
 				getVenta(ID);                   // Solicita VENTA
 				//getTotales( ID, pre_mang );     // Solicita TOTALES.
-        Serial.print(F(" > "));  Serial.println( millis() );
+				Serial.print(F(" > "));  Serial.println( millis() );
 				return 0;
 			}
 			
@@ -553,12 +566,12 @@ int		VerificaRecibido( unsigned char *trama, int n)
 
 			EnviarID(ID);
 			res = RecibirTrama( trama );
-			//delay(300);
+			delay(500);
 
 			validarDatos=0;
 			getVenta(ID);                   // Solicita VENTA
 			getTotales( ID, pre_mang );     // Solicita TOTALES.
-      Serial.print(F(" > "));  Serial.println( millis() );
+			Serial.print(F(" > "));  Serial.println( millis() );
 			return 0;
 		}
 		
@@ -570,8 +583,8 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			Serial.print(F(", surtidor:"));		Serial.print(surt);	Serial.print(F(", lado:"));		Serial.print(lado);			
 			Serial.print(F(" - "));				Serial.println(millis());
 			
-			// @@@@@ aqui se debe revizar un posible error en los datos que se insertan en venta.
-			if(precio_mang_status==0)	// actualiza venta solo si la manguera esta colgada. hay que mirar lo de los totales......
+			// @@@@@ aqui se debe revizar un posible error en los datos que se insertan en venta
+			if(precio_mang_status==0)	// actualiza venta solo si la manguera esta colgada. hay que mirar lo de los totales...
 			{
 				venta[surt][lado].Venta = tempventa;
 				venta[surt][lado].Volumen = ((double)tempvolumen)/1000;

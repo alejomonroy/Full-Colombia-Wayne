@@ -25,9 +25,10 @@ void print_infoVenta( uint8_t surtidor, uint8_t lado )		// muestra la ultima ven
 	Serial.print( F("----- surtidor: ") );  Serial.print(surtidor);
 	Serial.print( F(", lado: ") );  Serial.println(lado);
 	
+	Serial.print( F("Manguera: ") );     Serial.println( venta[surtidor][lado].manguera );
 	dtostrf( venta[surtidor][lado].Volumen, 4, 3, strVolumen);
-	Serial.print( F("Volumen: ") );     Serial.println( strVolumen );
-	Serial.print( F("Venta: ") );     Serial.println( venta[surtidor][lado].Venta );
+	Serial.print( F("Volumen : ") );     Serial.println( strVolumen );
+	Serial.print( F("Venta   : ") );     Serial.println( venta[surtidor][lado].Venta );
 	Serial.print( F("PPU: ") );       Serial.println( venta[surtidor][lado].PPU );
 	Serial.print( F("Numeracion: ") );      Serial.println( venta[surtidor][lado].Numeracion );
 }
@@ -49,8 +50,13 @@ void LoopProtocolo_wayne()		// Codigo para comunicacion con surtidor Marca WAYNE
 {
 	for( int surt=0; surt<Conf.Num_Surt; surt++ )	// surtidores
 	{
-    while(SYNC) LoopI2C_Comunicacion();
-    delay(40);    SYNC = 1;
+		while(SYNC)
+		{
+			LoopI2C_Comunicacion();
+			Serial.print(F("-"));
+			delay(20);
+		} Serial.println();
+		delay(40);    SYNC = 1;
     
 		for( int lado=0; lado<2; lado++ )	// surtidores
 		{
@@ -60,9 +66,9 @@ void LoopProtocolo_wayne()		// Codigo para comunicacion con surtidor Marca WAYNE
 			//	Verificar_iButton(lado);
 			
 			// ------------------- ENVIAR ID -------------------
-      Serial.println(F("_____"));
+			Serial.println(F("_____"));
 			getEstado(IDs[surt][lado]);
-      Serial.println(F("_____"));
+			Serial.println(F("_____"));
 			
 			EnviarID(IDs[surt][lado]);
 			res = RecibirTrama( trama );
