@@ -586,9 +586,9 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			// @@@@@ aqui se debe revizar un posible error en los datos que se insertan en venta
 			if(precio_mang_status==0)	// actualiza venta solo si la manguera esta colgada. hay que mirar lo de los totales...
 			{
-				venta[surt][lado].Venta = tempventa;
-				venta[surt][lado].Volumen = ((double)tempvolumen)/1000;
-				venta[surt][lado].manguera = pre_mang;
+				//venta[surt][lado].Venta = tempventa;
+				//venta[surt][lado].Volumen = ((double)tempvolumen)/1000;
+				//venta[surt][lado].manguera = pre_mang;
 
 				if(finalVenta==1)
 				{
@@ -614,6 +614,10 @@ int		VerificaRecibido( unsigned char *trama, int n)
 		// ***************************************************************************
 		if( (F_ventaOk[surt][lado]==1) && (F_globales[surt][lado] == puta) )
 		{
+      venta[surt][lado].Venta = tempventa;
+      venta[surt][lado].Volumen = ((double)tempvolumen)/1000;
+      venta[surt][lado].manguera = pre_mang;
+
 			// datos de la venta
 			Serial.print(F("VENTA NUEVA *************** "));
 			Serial.print(F("Surtidor: "));			Serial.print(surt);

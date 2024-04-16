@@ -81,6 +81,15 @@ void LoopProtocolo_wayne()		// Codigo para comunicacion con surtidor Marca WAYNE
 			EnviarID(IDs[surt][lado]);
 			res = RecibirTrama( trama );
 			if(res >= 3)   VerificaRecibido( trama, res);
+      
+      if (mang_status[surt][lado] == READY)
+      {
+        if((funAuth[surt][lado].funcion == 0)||(millis() > funAuth[surt][lado].time))
+        {
+          funAuth[surt][lado].funcion == 0;
+          mang_status[surt][lado] = IDLE1;
+        }
+      }
 		}
 	}
 
