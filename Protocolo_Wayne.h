@@ -49,7 +49,8 @@ uint8_t		F_ventaOk[3][2]		= { {0,0}, {0 ,0}, {0 ,0} };			// por CARA.
 uint8_t		F_enviado[3][2]		= { {0,0}, {0 ,0}, {0 ,0} };			// por CARA.
 
 uint8_t		F_globales[3][2]	= { {0,0}, {0 ,0}, {0 ,0} };			// por CARA.
-uint8_t    	UltManguera[3][2]	= { {0,0}, {0 ,0}, {0 ,0} };			// por CARA.
+uint8_t		UltManguera[3][2]	= { {0,0}, {0 ,0}, {0 ,0} };			// por CARA.
+double		UltPPU[3][2]	= { {0,0}, {0 ,0}, {0 ,0} };
 
 int res;
 
@@ -153,9 +154,9 @@ int    RecibirTrama( unsigned char *trama )  // Tiempo de espera = 100ms
 //  Serial.println(F("punto 1"));
 	// recibir una trama hasta el fin de linea 0xfa
 	unsigned long	tini_loop = millis();
-  unsigned long  tini_prueba = millis();
-  Serial.print(F("RX: ("));
-  
+	unsigned long  tini_prueba = millis();
+	Serial.print(F("RX: ("));
+	
 	do {
 		while(SerialIgem.available() > 0) {
 			c = SerialIgem.read();
@@ -182,8 +183,8 @@ int    RecibirTrama( unsigned char *trama )  // Tiempo de espera = 100ms
 		}	// */
 	
 	}while( (millis()-tini_loop)<50 ); // Terminar si no llega traza y se toma como cara AUSENTE.
-  Serial.print(F("): "));  Serial.print(pos);  Serial.print(F(": Time: "));  Serial.print(millis()-tini_prueba);
-  Serial.print(F(" < "));   Serial.println(millis());
+	Serial.print(F("): "));  Serial.print(pos);  Serial.print(F(": Time: "));  Serial.print(millis()-tini_prueba);
+	Serial.print(F(" < "));   Serial.println(millis());
 
 	if((millis()-tini_loop)>50)
 	{
@@ -215,7 +216,7 @@ int		EnviarTrama2( uint8_t ID, unsigned char *trama, int n )		// Con confirmacio
 	{
 		EnviarTrama(ID, trama, n);        // Envia solicitud de volumen.    51 35 | 1 1 0 | A2 50 | 3 FA
 		res = RecibirTrama( trama2 );      // Validar trama recibida.        50 C5 FA
-    delay(DELAYWAYNE);
+		delay(DELAYWAYNE);
 		
 		if(res>19)
 		{
@@ -252,7 +253,7 @@ int    CerrarComunicacion(uint8_t ID, uint8_t consecutivo)
 	digitalWrite(TXE485, RS485Receive);
 	digitalWrite(RXE485, RS485Receive);
 
-  Serial.print(F("TX: ("));	Serial.print( ID, HEX );    Serial.print(" ");
+	Serial.print(F("TX: ("));	Serial.print( ID, HEX );    Serial.print(" ");
 	Serial.print( 0xc0 + (0x0f&consecutivo), HEX);    Serial.print(" ");
 	Serial.println(F("fa)"));
 	return 0;
@@ -262,7 +263,7 @@ int    CerrarComunicacion(uint8_t ID, uint8_t consecutivo)
 // si llega 52 c3 fa (return 1) o 52 53 c3 (return -3)
 unsigned long tmpnumeracion = 0;
 
-uint8_t	finalVenta=0;
+uint8_t		finalVenta=0;
 uint8_t  	validarDatos=0;		// Un ciclo de retraso para que valide datos.
 
 int		VerificaRecibido( unsigned char *trama, int n)
@@ -511,9 +512,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			
 			if(temp_precio != 0)										// Si el precio en diferente de cero se actualiza.
 			{
-				UltManguera[surt][lado] = pre_mang;
 				venta[surt][lado].PPU = temp_precio;
-       
 				F_globales[surt][lado] |= F_PRECIO;
 			}
 			//if(pre_mang != 0) 	venta[index].Manguera = pre_mang;
@@ -532,9 +531,6 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				F_globales[surt][lado] = 0;
 			}
 			
-			/*
-				Si esta manguera levantada y autorizacion 1 o 2, debe autorizar manguera nuevamente.
-			*/
 			// -------------------------
 			if( (mang_status[surt][lado]== WORK)&&(precio_mang_status==0) )		// FINAL DE LA VENTA	***
 			{
@@ -550,7 +546,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				
 				mang_status[surt][lado]=IDLE1;
 				getVenta(ID);                   // Solicita VENTA
-				//getTotales( ID, pre_mang );     // Solicita TOTALES.
+				//getTotales( ID, UltManguera[surt][lado] );     // Solicita TOTALES.
 				Serial.print(F(" > "));  Serial.println( millis() );
 				return 0;
 			}
@@ -570,7 +566,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 
 			validarDatos=0;
 			getVenta(ID);                   // Solicita VENTA
-			getTotales( ID, pre_mang );     // Solicita TOTALES.
+			getTotales( ID, UltManguera[surt][lado] );     // Solicita TOTALES.
 			Serial.print(F(" > "));  Serial.println( millis() );
 			return 0;
 		}
@@ -616,7 +612,8 @@ int		VerificaRecibido( unsigned char *trama, int n)
 		{
 			venta[surt][lado].Venta = tempventa;
 			venta[surt][lado].Volumen = ((double)tempvolumen)/1000;
-			venta[surt][lado].manguera = pre_mang;
+			venta[surt][lado].PPU = UltPPU[surt][lado];
+			venta[surt][lado].manguera = UltManguera[surt][lado];
 
 			// datos de la venta
 			Serial.print(F("VENTA NUEVA *************** "));
@@ -710,12 +707,12 @@ int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precioBDC)			// Por ahora 
 	Serial.println(F("Autorizar Venta *******"));
 	Serial.print(F("ID   : "));	Serial.print(ID);	Serial.print(F(", mang : "));	Serial.println(manguera);
  
-  uint8_t surtidor = i2cAutoriza.surtidor;
-  uint8_t lado = i2cAutoriza.lado;
+	uint8_t surtidor = i2cAutoriza.surtidor;
+	uint8_t lado = i2cAutoriza.lado;
 	
 	if((funAuth[surtidor][lado].funcion != AUTORIZAR)||(millis() > funAuth[surtidor][lado].time))
 	{
-    funAuth[surtidor][lado].funcion =0;
+		funAuth[surtidor][lado].funcion =0;
 		Serial.println(F("*** No hay AUTORIZACION ***"));
 		return -1;
 	}
@@ -730,10 +727,10 @@ int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precioBDC)			// Por ahora 
 	Serial.print(F("lado    : "));  Serial.println(lado);
 	Serial.print(F("mang    : "));  Serial.println(mang);
 	Serial.print(F("cantidad: "));  Serial.println(cantidad);
-  
+
 	if((manguera-1) != mang)
 	{
-    funAuth[surtidor][lado].funcion =0;
+		funAuth[surtidor][lado].funcion =0;
 		Serial.println(F("*** Manguera DIFERENTE a la seleccionada ***"));
 		return -2;
 	}
@@ -745,11 +742,14 @@ int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precioBDC)			// Por ahora 
 	
 	if( IDs[surtidor][lado] != ID )
 	{
-    funAuth[surtidor][lado].funcion =0;
-    Serial.println(F("*** Numero de lado o cara no corresponde a la autorizada ***"));
+		funAuth[surtidor][lado].funcion =0;
+		Serial.println(F("*** Numero de lado o cara no corresponde a la autorizada ***"));
 		return -1;
 	}
-  
+
+	UltManguera[surtidor][lado]	= manguera-1;
+	UltPPU[surtidor][lado]	= precioBDC;
+
 	int res = 0;
 	unsigned char trama[20];
 	unsigned int crc;
