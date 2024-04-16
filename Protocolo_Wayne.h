@@ -614,9 +614,9 @@ int		VerificaRecibido( unsigned char *trama, int n)
 		// ***************************************************************************
 		if( (F_ventaOk[surt][lado]==1) && (F_globales[surt][lado] == puta) )
 		{
-      venta[surt][lado].Venta = tempventa;
-      venta[surt][lado].Volumen = ((double)tempvolumen)/1000;
-      venta[surt][lado].manguera = pre_mang;
+			venta[surt][lado].Venta = tempventa;
+			venta[surt][lado].Volumen = ((double)tempvolumen)/1000;
+			venta[surt][lado].manguera = pre_mang;
 
 			// datos de la venta
 			Serial.print(F("VENTA NUEVA *************** "));
@@ -633,21 +633,21 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			
 			if(( errorVenta<-50)||(50<errorVenta))
 			{
-				mang_status[surt][lado]=1;
+				mang_status[surt][lado]=IDLE1;
 				
 				F_ventaOk[surt][lado] = 0;			// No se envia esta venta y se permite releer en el proximo ciclo.
 				F_globales[surt][lado] = 0;
-	      Serial.print(F(" > "));  Serial.println( millis() );
+				Serial.print(F(" > "));  Serial.println( millis() );
 				return -6;
 			}
 			
 			F_enviado[surt][lado] = 0;
 			F_ventaOk[surt][lado]= 0x10 + 2*surt + lado;    // 0-7 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 			Serial.print(F("Volumen 2: ")); Serial.print(venta[surt][lado].Volumen);
-      Serial.print(F(" > "));  Serial.println( millis() );
+			Serial.print(F(" > "));  Serial.println( millis() );
 			return ret;
 		}
-    Serial.print(F(" > "));  Serial.println( millis() );
+		Serial.print(F(" > "));  Serial.println( millis() );
 		return ret;
 	}
 }
@@ -806,9 +806,9 @@ int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precioBDC)			// Por ahora 
 	trama[3] = 0x01;
 	trama[4] = 0x06;
 	EnviarTrama2(ID, trama, 3);        // 51 36 1 1 6 22 16 3 fa
-  
-  mang_status[surtidor][lado]= WORK;
-  funAuth[surtidor][lado].funcion=0;
+	
+	mang_status[surtidor][lado]= WORK;
+	funAuth[surtidor][lado].funcion=0;
 	return 0;
 }
 
