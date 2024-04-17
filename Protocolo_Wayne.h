@@ -751,7 +751,7 @@ int		autorizar(uint8_t ID, uint8_t manguera, uint16_t *precio)			// Por ahora so
 		return -1;
 	}
 
-	UltManguera[surtidor][lado]	= manguera-1;
+	UltManguera[surtidor][lado]	= manguera;
 	UltPPU[surtidor][lado]	= precio;
 
 	Serial.print(F("Surtidor: "));  Serial.print(surtidor);  Serial.print(F(", lado:"));  Serial.println(lado);
