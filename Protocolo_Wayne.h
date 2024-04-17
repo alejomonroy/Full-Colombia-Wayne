@@ -26,7 +26,7 @@ int		VerificaRecibido( unsigned char *trama, int n);
 
 // FUNCIONES
 int		getTotales(uint8_t ID, uint8_t manguera);							// oK
-int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precioBDC);
+int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precio);
 int		desautorizar(uint8_t ID);										// oK
 int		getVenta( uint8_t ID );										// oK
 int		getEstado(uint8_t ID);											// oK
@@ -50,7 +50,7 @@ uint8_t		F_enviado[3][2]		= { {0,0}, {0 ,0}, {0 ,0} };			// por CARA.
 
 uint8_t		F_globales[3][2]	= { {0,0}, {0 ,0}, {0 ,0} };			// por CARA.
 uint8_t		UltManguera[3][2]	= { {0,0}, {0 ,0}, {0 ,0} };			// por CARA.
-double		UltPPU[3][2]	= { {0,0}, {0 ,0}, {0 ,0} };
+uint16_t		UltPPU[3][2]	= { {0,0}, {0 ,0}, {0 ,0} };
 
 int res;
 
@@ -512,7 +512,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			
 			if(temp_precio != 0)										// Si el precio en diferente de cero se actualiza.
 			{
-				venta[surt][lado].PPU = temp_precio;
+				venta[surt][lado].PPU = temp_precio;			// Tener cuidado con esta linea si se levanta y cuelga la otra manguera.
 				F_globales[surt][lado] |= F_PRECIO;
 			}
 			//if(pre_mang != 0) 	venta[index].Manguera = pre_mang;
@@ -525,7 +525,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				Serial.print(F("ID: "));  Serial.println(ID, HEX);
 				
 				//			AUTORIZACION
-				autorizar(ID, pre_mang, precioBDC);
+				autorizar(ID, pre_mang, temp_precio);
 				
 				F_ventaOk[surt][lado] = 0;
 				F_globales[surt][lado] = 0;
@@ -615,8 +615,12 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			venta[surt][lado].PPU = UltPPU[surt][lado];
 			venta[surt][lado].manguera = UltManguera[surt][lado];
 
-			// datos de la venta
 			Serial.print(F("VENTA NUEVA *************** "));
+			Serial.print(F("Surtidor: "));  Serial.print(surt);  Serial.print(F(", lado:"));  Serial.println(lado);
+			Serial.print(F("UltManguera: "));  Serial.println(UltManguera[surt][lado]);
+			Serial.print(F("UltPPU: "));  Serial.println(UltPPU[surt][lado]);
+			Serial.println();
+
 			Serial.print(F("Surtidor: "));			Serial.print(surt);
 			Serial.print(F(", lado: "));			Serial.println(lado);
 			Serial.print(F("Volumen: "));			Serial.println(venta[surt][lado].Volumen);
@@ -702,7 +706,7 @@ int getVenta( uint8_t ID )   // Llenar una estructura con la informacion de la v
 }
 
 // ----------------------------------------------------------------------------------------------------
-int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precioBDC)			// Por ahora solo autoriza a cualquier monto.
+int		autorizar(uint8_t ID, uint8_t manguera, uint16_t *precio)			// Por ahora solo autoriza a cualquier monto.
 {
 	Serial.println(F("Autorizar Venta *******"));
 	Serial.print(F("ID   : "));	Serial.print(ID);	Serial.print(F(", mang : "));	Serial.println(manguera);
@@ -748,7 +752,11 @@ int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precioBDC)			// Por ahora 
 	}
 
 	UltManguera[surtidor][lado]	= manguera-1;
-	UltPPU[surtidor][lado]	= precioBDC;
+	UltPPU[surtidor][lado]	= precio;
+
+	Serial.print(F("Surtidor: "));  Serial.print(surtidor);  Serial.print(F(", lado:"));  Serial.println(lado);
+	Serial.print(F("UltManguera <- "));  Serial.println(UltManguera[surtidor][lado]);
+	Serial.print(F("UltPPU <- "));  Serial.println(UltPPU[surtidor][lado]);
 
 	int res = 0;
 	unsigned char trama[20];
