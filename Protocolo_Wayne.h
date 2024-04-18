@@ -26,7 +26,7 @@ int		VerificaRecibido( unsigned char *trama, int n);
 
 // FUNCIONES
 int		getTotales(uint8_t ID, uint8_t manguera);							// oK
-int		autorizar(uint8_t ID, uint8_t manguera, uint8_t *precio);
+int		autorizar(uint8_t ID, uint8_t manguera, uint16_t precio);
 int		desautorizar(uint8_t ID);										// oK
 int		getVenta( uint8_t ID );										// oK
 int		getEstado(uint8_t ID);											// oK
@@ -706,7 +706,7 @@ int getVenta( uint8_t ID )   // Llenar una estructura con la informacion de la v
 }
 
 // ----------------------------------------------------------------------------------------------------
-int		autorizar(uint8_t ID, uint8_t manguera, uint16_t *precio)			// Por ahora solo autoriza a cualquier monto.
+int		autorizar(uint8_t ID, uint8_t manguera, uint16_t precio)			// Por ahora solo autoriza a cualquier monto.
 {
 	Serial.println(F("Autorizar Venta *******"));
 	Serial.print(F("ID   : "));	Serial.print(ID);	Serial.print(F(", mang : "));	Serial.println(manguera);
