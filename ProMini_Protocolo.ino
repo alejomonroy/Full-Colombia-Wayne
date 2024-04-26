@@ -121,7 +121,7 @@ void loop()
 {
 	Serial.print( F("______________________________"));    Serial.print(millis() - TLoop);   
 	Serial.print( F(" - "));    Serial.print(millis());  Serial.print( F(" - ContLoop: "));    Serial.println(ContLoop);
-  TLoop = millis();
+	TLoop = millis();
   
 	LoopI2C_Comunicacion();			// Si no llega traza, su uso de tiempo es minimo.
 	LoopProtocolo_wayne();
