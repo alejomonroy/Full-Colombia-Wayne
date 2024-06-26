@@ -7,6 +7,7 @@
  * 
  * La libreria twi.c poner salida de emergencia a cada while que pueda bloquear los microcontroladores.
  */
+
 #include "Arduino.h"
 #include <OneWire.h>
 #include <EEPROM.h>
@@ -57,7 +58,7 @@ void RecibeRequisicionI2C( int howMany );
 
 void strcpy(char* buf, const __FlashStringHelper *ifsh)
 {
-  const char PROGMEM *p = (const char PROGMEM *)ifsh;
+	const char PROGMEM *p = (const char PROGMEM *)ifsh;
 	int i = 0;
 	uint8_t c  = 0;
 	do
@@ -127,7 +128,6 @@ void loop()
 	LoopProtocolo_wayne();
 	ContLoop++;
 }
-
 
 /* ***************************************************************************************************
  *                                              iButton                                              *

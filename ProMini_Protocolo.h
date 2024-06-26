@@ -1,3 +1,4 @@
+
 void LoopI2C_Comunicacion();
 
 /* ***************************************************************************************************
@@ -20,7 +21,7 @@ void RD_Struct( unsigned int addr_eeprom, long tamano, char  *tmpstr )
 // ---------------------------------------------------------------
 void print_infoVenta( uint8_t surtidor, uint8_t lado )		// muestra la ultima venta del surtidor.
 {
-  char  strVolumen[15];
+	char  strVolumen[15];
 	
 	Serial.print( F("----- surtidor: ") );  Serial.print(surtidor);
 	Serial.print( F(", lado: ") );  Serial.println(lado);
@@ -81,23 +82,23 @@ void LoopProtocolo_wayne()		// Codigo para comunicacion con surtidor Marca WAYNE
 			EnviarID(IDs[surt][lado]);
 			res = RecibirTrama( trama );
 			if(res >= 3)   VerificaRecibido( trama, res);
-      
-      if (mang_status[surt][lado] == READY)
-      {
-        if((funAuth[surt][lado].funcion == 0)||(millis() > funAuth[surt][lado].time))
-        {
-          funAuth[surt][lado].funcion == 0;
-          mang_status[surt][lado] = IDLE1;
-        }
-      }
+
+			if (mang_status[surt][lado] == READY)
+			{
+				if((funAuth[surt][lado].funcion == 0)||(millis() > funAuth[surt][lado].time))
+				{
+					funAuth[surt][lado].funcion == 0;
+					mang_status[surt][lado] = IDLE1;
+				}
+			}
 		}
 	}
 
-  for(int surt=0; surt<3; surt++) {
-    for(int lado=0; lado<2; lado++) {
-      print_infoVenta(surt, lado);
-    }
-  }
+	for(int surt=0; surt<3; surt++) {
+		for(int lado=0; lado<2; lado++) {
+			print_infoVenta(surt, lado);
+		}
+	}
   
 	delay(DELAYWAYNE);
 }
