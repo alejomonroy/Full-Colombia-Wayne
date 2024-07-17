@@ -22,8 +22,12 @@ uint8_t			mang_status[3][2] = { {0,0}, {0 ,0}, {0 ,0} };				// por CARA.
  *****************************************************************************************************/
 typedef struct
 {
-  uint8_t funcion =0;
-  unsigned long time =0;
+	uint8_t funcion =0;
+	unsigned long time =0;
+
+	int mang;
+	uint8_t modo;
+	double cantidad;
 } I2cFuncion;
 I2cFuncion  i2cFuncion;
 

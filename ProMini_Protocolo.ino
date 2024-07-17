@@ -339,6 +339,11 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 
 		funAuth[surt][lado].funcion = AUTORIZAR;
 		funAuth[surt][lado].time = millis() + 20000;    // La vigencia de la autorizacion no es mas de 30 segundos.
+		
+		funAuth[surt][lado].mang	= i2cAutoriza.mang;
+		funAuth[surt][lado].modo	= i2cAutoriza.modo;
+		funAuth[surt][lado].cantidad = i2cAutoriza.cantidad;
+
 		mang_status[surt][lado] = READY;
 	} // */
 	

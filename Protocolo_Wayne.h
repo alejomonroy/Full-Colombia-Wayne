@@ -26,7 +26,7 @@ int		VerificaRecibido( unsigned char *trama, int n);
 
 // FUNCIONES
 int		getTotales(uint8_t ID, uint8_t manguera);							// oK
-int		autorizar(uint8_t ID, uint8_t manguera, uint16_t precio);
+int		autorizar(uint8_t ID, uint8_t manguera, int surtidor, int lado, uint16_t precio);
 int		desautorizar(uint8_t ID);										// oK
 int		getVenta( uint8_t ID );										// oK
 int		getEstado(uint8_t ID);											// oK
@@ -525,7 +525,7 @@ int		VerificaRecibido( unsigned char *trama, int n)
 				Serial.print(F("ID: "));  Serial.println(ID, HEX);
 				
 				//			AUTORIZACION
-				autorizar(ID, pre_mang, temp_precio);
+				autorizar(ID, pre_mang, surt, lado, temp_precio);
 				
 				F_ventaOk[surt][lado] = 0;
 				F_globales[surt][lado] = 0;
@@ -706,13 +706,13 @@ int getVenta( uint8_t ID )   // Llenar una estructura con la informacion de la v
 }
 
 // ----------------------------------------------------------------------------------------------------
-int		autorizar(uint8_t ID, uint8_t manguera, uint16_t precio)			// Por ahora solo autoriza a cualquier monto.
+int		autorizar(uint8_t ID, uint8_t manguera, int surtidor, int lado, uint16_t precio)			// Por ahora solo autoriza a cualquier monto.
 {
 	Serial.println(F("Autorizar Venta *******"));
 	Serial.print(F("ID   : "));	Serial.print(ID);	Serial.print(F(", mang : "));	Serial.println(manguera);
  
-	uint8_t surtidor = i2cAutoriza.surtidor;
-	uint8_t lado = i2cAutoriza.lado;
+	//uint8_t surtidor = i2cAutoriza.surtidor;
+	//uint8_t lado = i2cAutoriza.lado;
 	
 	if((funAuth[surtidor][lado].funcion != AUTORIZAR)||(millis() > funAuth[surtidor][lado].time))
 	{
@@ -721,12 +721,12 @@ int		autorizar(uint8_t ID, uint8_t manguera, uint16_t precio)			// Por ahora sol
 		return -1;
 	}
 
-	int		mang = i2cAutoriza.mang;
-	uint8_t	modo = i2cAutoriza.modo;
-	double	cantidad = i2cAutoriza.cantidad;
+	int		mang = funAuth[surtidor][lado].mang;
+	uint8_t	modo = funAuth[surtidor][lado].modo;
+	long	cantidad = funAuth[surtidor][lado].cantidad;
 
 	// probar si la manguera es la misma, sino, retorna.
-	Serial.println(F("--- i2cAutoriza ---"));
+	Serial.println(F("--- funAuth[surtidor][lado] ---"));
 	Serial.print(F("modo    : "));  Serial.println(modo);
 	Serial.print(F("lado    : "));  Serial.println(lado);
 	Serial.print(F("mang    : "));  Serial.println(mang);
@@ -777,10 +777,10 @@ int		autorizar(uint8_t ID, uint8_t manguera, uint16_t precio)			// Por ahora sol
 	trama[4] = manguera;
 	EnviarTrama2(ID, trama, 3);        // 51 34 2 1 1 92 6C 3 fa
 	
-	switch(i2cAutoriza.modo)
+	switch(modo)
 	{
 		case 0:                             // FULL
-			i2cAutoriza.cantidad = 999900;
+			cantidad = 999900;
 			trama[2] = 0x03;                   // volumen. maximo 999.9 galones
 			break;
 		case 1:
@@ -792,7 +792,7 @@ int		autorizar(uint8_t ID, uint8_t manguera, uint16_t precio)			// Por ahora sol
 	trama[3] = 0x04;
 	
 	// calcular el valor.
-	long ventaBin = i2cAutoriza.cantidad;
+	long ventaBin = cantidad;
 	uint8_t ventaBDC[8];
 	
 	ventaBDC[0] = 0x0f&((ventaBin%100000000)/10000000);
