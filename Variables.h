@@ -80,7 +80,7 @@ typedef struct
  *****************************************************************************************************/
 typedef struct
 {
-	uint8_t	Num_Surt = 1;                 // Numero de surtidores conectador a este promini.
-	uint8_t	Num_Mang[3] = { 1, 0, 0 };    // Numero de mangueras por lado de cada surtidor.
+	uint8_t	Num_Surt = 2;                 // Numero de surtidores conectador a este promini.
+	uint8_t	Num_Mang[3] = { 2, 1, 0 };    // Numero de mangueras por lado de cada surtidor.
 }	Configuracion;
 Configuracion Conf;
