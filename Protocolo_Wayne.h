@@ -453,8 +453,8 @@ int		VerificaRecibido( unsigned char *trama, int n)
 			}
 			// Autorizacion.	Flag Autorizacion.		1 1 1 1 1 2
 			/*	51 3D 1 1 1 1 1 2 1 1 2 3 4 0 81 23 11 B1 CE 3 FA:IG		Autorizacion
-				51 3E 1 1 1 1 1 2 F7 4F 3 FA
-				51 33 1 1 1 1 1 2 2B 8F 3 FA	*/
+				  51 3E 1 1 1 1 1 2 F7 4F 3 FA
+				  51 33 1 1 1 1 1 2 2B 8F 3 FA	*/
 		}
 
 		// ----------------------------------------------------------------------------------------------------
