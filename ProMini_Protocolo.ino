@@ -31,7 +31,7 @@
 #define ARD_MEGA2560	0x1
 #define ARD_PROTOCOLO	0x2
 #define ARD_PROTOCOLO2	0x4
-#define myADDR 			ARD_PROTOCOLO
+#define myADDR 			ARD_PROTOCOLO2
 
 #define AUTORIZAR	1
 #define PRECIOS		2
@@ -94,7 +94,7 @@ void setup()
 	digitalWrite(TXE485,0);
 	digitalWrite(RXE485,0);
 	
-	Wire.begin(ARD_PROTOCOLO);
+	Wire.begin(myADDR);
 	Wire.onReceive(Recibe_I2C);
 	Wire.onRequest(Request_I2C);
 	
