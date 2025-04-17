@@ -1,14 +1,3 @@
-/*
- * Antes de compilar verificar el bit de paridad, para protocolo wayne debe ser IMPAR.
- * esto se arregla en el archivo SoftwareSerial.cpp.
- *
- * la libreria Print.cpp se debe quitar las lineas:
- * 	//digitalWrite(22,0);         //delay(1);
- * 
- * La libreria twi.c poner salida de emergencia a cada while que pueda bloquear los microcontroladores.
- */
-
-#include "Arduino.h"
 #include <OneWire.h>
 #include <EEPROM.h>
 
@@ -157,12 +146,6 @@ void getKeyCode(OneWire   ds, uint8_t *addr)   // Leer codigo iButton
 /* ***************************************************************************************************
  *                                         Comunicacion I2C                                          *
  *****************************************************************************************************/
-/*char char2int(char input)
-{
-	if( ('0'<=input) && (input<='9') )  return (input-'0');
-	if( ('a'<=input) && (input<='f') )  return (input-'a'+10);
-	return 0;
-}*/
 
 // ------------------
 void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
@@ -258,7 +241,7 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 		//Serial.println(F("Estado de mangueras"));
 
 		SYNC = 0;
-    //SYNC = millis();
+		//SYNC = millis();
 
 		i2cFuncion.funcion = ESTADO_M;
 		i2cFuncion.time = millis() + 200;
@@ -356,7 +339,7 @@ void Recibe_I2C( int howMany )	// Se mantiene sin informacion la interrupcion.
 	else
 	{
 		Serial.print( F("ORDEN...") );		Serial.print( i2cFuncion.funcion );
-    Serial.print( F(" - ") );    Serial.println(millis());
+		Serial.print( F(" - ") );    Serial.println(millis());
 	}
 }
 
